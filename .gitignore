@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+env/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverrideIcon
+._*
+
+# LaTeX build artifacts (kept in outputs/logs by build.sh)
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
+*.nav
+*.snm
+
+# Generated outputs (tracked selectively)
+outputs/logs/
+outputs/figures/*.png
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Claude Code session memory
+.claude/
