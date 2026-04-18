@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import itertools
 import json
+import multiprocessing as mp
 import os
 import time
 
@@ -223,7 +224,7 @@ def site_variances(rho, n_ops, n2_ops):
 # =============================================================================
 
 def run_single_condition(L, N, nmax, J_over_U, gamma_base, gamma_extra,
-                         tau_list, n_trials, burn_in_time, seed):
+                         tau_list, n_trials, burn_in_time, seed, verbose=True):
 
     U = 1.0
     J = J_over_U * U
@@ -275,7 +276,7 @@ def run_single_condition(L, N, nmax, J_over_U, gamma_base, gamma_extra,
 
         for _ in tqdm(range(n_trials),
                       desc=f"  L={L} J/U={J_over_U:.2f} tau={tau:.0f}",
-                      leave=False):
+                      leave=False, disable=not verbose):
             rsites = rng.choice(L, size=k, replace=False).tolist()
 
             liouv_rnd = liouv_base.copy()
@@ -320,6 +321,14 @@ def run_single_condition(L, N, nmax, J_over_U, gamma_base, gamma_extra,
 # MAIN RUN
 # =============================================================================
 
+N_WORKERS = 8  # parallel workers; set to 1 to disable parallelism
+
+
+def _condition_worker(args):
+    """Top-level worker function (must be importable for multiprocessing)."""
+    return run_single_condition(*args)
+
+
 def run_all():
     cfg = {
         "SEED": 20260325,
@@ -328,30 +337,49 @@ def run_all():
         "GAMMA_EXTRA": 0.5,
         "BURN_IN_TIME": 5.0,
         "N_TRIALS": 100,
-        "TAU_LIST": [1.0, 2.0, 3.0,],
+        "TAU_LIST": [1.0, 2.0, 3.0],
         "J_OVER_U_LIST": [0.12, 0.20, 0.30, 0.40],
         "L_LIST": [6, 7, 8],
     }
     save_json(cfg, os.path.join(DATA_DIR, "config.json"))
 
-    all_res = []
+    # Build the flat list of conditions (same seed sequence as sequential)
+    conditions = []
     sc = cfg["SEED"]
-
     for L in cfg["L_LIST"]:
-        N = L // 2  # floor division: half-filling = floor(L/2) for all L
+        N = L // 2  # half-filling = floor(L/2) for all L
         for ju in cfg["J_OVER_U_LIST"]:
-            print(f"\n--- L={L}, J/U={ju}, N={N}, D=? ---")
             sc += 1
-            res = run_single_condition(
-                L=L, N=N, nmax=cfg["NMAX"], J_over_U=ju,
-                gamma_base=cfg["GAMMA_BASE"], gamma_extra=cfg["GAMMA_EXTRA"],
-                tau_list=cfg["TAU_LIST"], n_trials=cfg["N_TRIALS"],
-                burn_in_time=cfg["BURN_IN_TIME"], seed=sc)
-            all_res.append(res)
-            for r in res["results"]:
-                tag = "PASS" if r["ci_lo"] > 0 else "FAIL"
-                print(f"  tau={r['tau']:.0f}: diff={r['mean_diff']:.4f} "
-                      f"CI=[{r['ci_lo']:.4f},{r['ci_hi']:.4f}] {tag}")
+            conditions.append((
+                L, N, cfg["NMAX"], ju,
+                cfg["GAMMA_BASE"], cfg["GAMMA_EXTRA"],
+                cfg["TAU_LIST"], cfg["N_TRIALS"],
+                cfg["BURN_IN_TIME"], sc,
+                False,  # verbose=False — suppress per-trial tqdm in workers
+            ))
+
+    n_workers = min(N_WORKERS, len(conditions))
+    print(f"Running {len(conditions)} conditions on {n_workers} parallel workers "
+          f"(L_LIST={cfg['L_LIST']}, J/U_LIST={cfg['J_OVER_U_LIST']}) ...\n")
+
+    # Pin each worker to 1 BLAS thread so N_WORKERS processes don't fight
+    # over BLAS thread pools (avoids CPU oversubscription).
+    for var in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
+        os.environ.setdefault(var, "1")
+
+    # Use fork-based context on Unix/macOS: workers inherit the parent address
+    # space without pickling large numpy arrays.
+    ctx = mp.get_context("fork")
+    with ctx.Pool(n_workers) as pool:
+        all_res = pool.map(_condition_worker, conditions)
+
+    # Print summary (results arrive in input order)
+    for res in all_res:
+        print(f"\nL={res['L']}, J/U={res['J_over_U']:.2f}, D={res['D']}")
+        for r in res["results"]:
+            tag = "PASS" if r["ci_lo"] > 0 else "FAIL"
+            print(f"  tau={r['tau']:.0f}: diff={r['mean_diff']:.4f} "
+                  f"CI=[{r['ci_lo']:.4f},{r['ci_hi']:.4f}] {tag}")
 
     return all_res, cfg
 
