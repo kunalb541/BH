@@ -36,6 +36,15 @@ import os
 import time
 from pathlib import Path
 
+# Pin BLAS/OpenBLAS/MKL to 1 thread per process.
+# Must happen before any numpy/scipy import so that the thread pool
+# is initialized with the correct count.  The spawn workers re-import
+# this module from scratch, so they pick up the setting automatically.
+for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS",
+           "MKL_NUM_THREADS", "NUMEXPR_NUM_THREADS",
+           "VECLIB_MAXIMUM_THREADS"):
+    os.environ.setdefault(_v, "1")
+
 import matplotlib
 import numpy as np
 import pandas as pd
