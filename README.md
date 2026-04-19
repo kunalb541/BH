@@ -41,7 +41,7 @@ Three regimes are identified across the tested parameter range:
 | 6 | ≤ 0.20 | ≤ 0.20 |
 | 7 | > 0.20 | ≤ 0.20 |
 | 8 | 0.20 | 0.18 |
-| 9 | 0.24 | 0.22 |
+| 9 | 0.24 | 0.20 |
 
 Both trends are monotone across the ladder: onset coupling increases with L (harder to activate at larger sizes) and decreases with τ (longer horizon helps).
 
@@ -170,6 +170,7 @@ The entire simulation is self-contained in a single file:
 - That the effect holds at all J/U — it is reversed at J/U = 0.12 and size-dependent in the crossover band J/U ≈ 0.18–0.24.
 - That results extend to the **thermodynamic limit** — exact Lindblad evolution is feasible through L = 9 at these parameters; larger sizes require approximate methods (e.g., MPO Lindblad).
 - That the nonlocal redistribution mechanism is fully understood — the paper shows the spatial pattern is consistent with it, not that it proves it.
+- That the variance information is doing independent work beyond spatial position — due to the reflection symmetry of the model (symmetric H, ground state, and Lindblad operators), F_i peaks at the geometrically central sites at all times. The high-F_i selector and a geometric central-k selector are identical in this model; disentangling variance from position requires breaking the spatial symmetry.
 
 ---
 
