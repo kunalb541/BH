@@ -191,9 +191,13 @@ The handle variable is the local occupation variance
 \end{equation}
 evaluated on the post-burn-in state $\rhohat_{\mathrm{burn}}$.
 This quantity identifies sites with larger number fluctuations.
-Under open boundary conditions, $\Fi$ is typically largest at the central
-sites of the chain, where the tunnelling network is most connected, and
-smallest at the edges.
+Because the Hamiltonian, the ground state, and the baseline Lindblad
+operators are all invariant under site reflection $i\leftrightarrow L-1-i$,
+the density matrix $\rhohat(t)$ remains symmetric at all times, and
+consequently $\Fi(t) = F_{L-1-i}(t)$ exactly.
+The $\Fi$ profile therefore peaks at the geometrically central sites and
+is smallest at the edges at every point in the evolution, including at
+$t_{\mathrm{burn}}$.
 The top-$k$ sites by $\Fi$ ($k=\lceil L/3\rceil$) are selected for
 intervention.
 The selected set is fixed by the post-burn-in state and is therefore
@@ -480,6 +484,16 @@ but does not access the thermodynamic limit.
 Whether the positive pocket persists, broadens, or shifts at larger system
 sizes is an open question requiring approximate methods such as
 matrix-product-operator Lindblad evolution~\cite{daley2014}.
+A further structural limitation of the present design is that, due to the
+reflection symmetry established above, the high-$\Fi$ selector and a
+geometric central-$k$ selector are identical in this model.
+The experiment therefore establishes that targeting the $k$ central sites
+produces more occupation loss than matched-budget random targeting in the
+positive pocket; it cannot presently attribute the effect to the variance
+information specifically rather than to the spatial position.
+Disentangling the two requires breaking the spatial symmetry --- through,
+for example, disorder, asymmetric filling, or site-dependent coupling ---
+and is left for future work.
 
 \paragraph{Experimental relevance.}
 The 1D open Bose--Hubbard model under dephasing is experimentally
