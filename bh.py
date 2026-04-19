@@ -106,7 +106,7 @@ def number_op(site, D, basis):
     return op
 
 
-def build_hamiltonian(L, J, U, basis, idx_map):
+def build_hamiltonian(L, J, U, nmax, basis, idx_map):
     D = len(basis)
     H = np.zeros((D, D), dtype=np.float64)
 
@@ -119,7 +119,7 @@ def build_hamiltonian(L, J, U, basis, idx_map):
         for state_idx, state in enumerate(basis):
             ni, nj = state[site], state[site + 1]
 
-            if nj > 0 and ni < 3:
+            if nj > 0 and ni < nmax:
                 new = list(state)
                 new[site] = ni + 1
                 new[site + 1] = nj - 1
@@ -127,7 +127,7 @@ def build_hamiltonian(L, J, U, basis, idx_map):
                 if t in idx_map:
                     H[idx_map[t], state_idx] += -J * np.sqrt((ni + 1) * nj)
 
-            if ni > 0 and nj < 3:
+            if ni > 0 and nj < nmax:
                 new = list(state)
                 new[site] = ni - 1
                 new[site + 1] = nj + 1
@@ -233,11 +233,11 @@ def run_single_condition(L, N, nmax, J_over_U, gamma_base, gamma_extra,
     idx_map = basis_index(basis)
     D = len(basis)
 
-    H = build_hamiltonian(L, J, U, basis, idx_map)
+    H = build_hamiltonian(L, J, U, nmax, basis, idx_map)
     n_ops = [number_op(i, D, basis) for i in range(L)]
     n2_ops = [nop @ nop for nop in n_ops]
 
-    L_ops = [n_ops[i] for i in range(L)]
+    L_ops = n_ops
     gammas_base = [gamma_base] * L
 
     liouv_base = build_liouvillian(H, L_ops, gammas_base)
@@ -321,7 +321,7 @@ def run_single_condition(L, N, nmax, J_over_U, gamma_base, gamma_extra,
 # MAIN RUN
 # =============================================================================
 
-N_WORKERS = 8  # parallel workers; set to 1 to disable parallelism
+N_WORKERS = min(8, os.cpu_count() or 8)  # parallel workers; set to 1 to disable parallelism
 
 
 def _condition_worker(args):
@@ -365,11 +365,12 @@ def run_all():
     # Pin each worker to 1 BLAS thread so N_WORKERS processes don't fight
     # over BLAS thread pools (avoids CPU oversubscription).
     for var in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
-        os.environ.setdefault(var, "1")
+        os.environ[var] = "1"
 
-    # Use fork-based context on Unix/macOS: workers inherit the parent address
-    # space without pickling large numpy arrays.
-    ctx = mp.get_context("fork")
+    # Use spawn context: avoids the macOS fork-deadlock caused by imported
+    # libraries (matplotlib, numpy BLAS) holding locks in background threads.
+    # Workers receive parameters via pickling (all args are small scalars/lists).
+    ctx = mp.get_context("spawn")
     with ctx.Pool(n_workers) as pool:
         all_res = pool.map(_condition_worker, conditions)
 
@@ -424,7 +425,6 @@ def make_tables(all_res, cfg):
         f.write("\n".join(lines))
 
     # --- Table 2: robustness across L at J/U=0.30 and 0.40 (with CI) ---
-    rng_boot = np.random.default_rng(99)
     rob_lines = []
     rob_lines.append(r"\begin{tabular}{l cc}")
     rob_lines.append(r"\toprule")
@@ -434,7 +434,6 @@ def make_tables(all_res, cfg):
     for ju in [0.30, 0.40]:
         cells = []
         for Lval in [6, 7]:
-# NEW — use the per-condition CIs already computed, average across tau
             matching = []
             for res in all_res:
                 if res["L"] != Lval:
@@ -490,7 +489,7 @@ def make_figures(all_res, cfg):
     rob = []
     for res in all_res:
         for r in res["results"]:
-            if r["J_over_U"] in [0.30, 0.40]:
+            if any(abs(r["J_over_U"] - ju) < 0.001 for ju in [0.30, 0.40]):
                 rob.append({"L": res["L"], "J_over_U": r["J_over_U"],
                             "tau": r["tau"], "mean_diff": r["mean_diff"],
                             "ci_lo": r["ci_lo"], "ci_hi": r["ci_hi"]})

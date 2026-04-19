@@ -20,32 +20,34 @@
 
 \begin{document}
 
-\title{Targeted Dephasing as a Causal Handle on Local\\
-       Occupation Loss in an Open Bose--Hubbard Chain}
+\title{Targeted Dephasing as a Causal Handle on Local Occupation Loss
+       in an Open Bose--Hubbard Chain}
 
 \author{Kunal Bhatia}
 \email{kunal29bhatia@gmail.com}
 \affiliation{Independent Researcher, Heidelberg, Germany}
-\altaffiliation{ORCID: 0009-0007-4447-6325}
+\altaffiliation{ORCID: \href{https://orcid.org/0009-0007-4447-6325}{0009-0007-4447-6325}}
 
 \date{\today}
 
 \begin{abstract}
-In an open one-dimensional Bose--Hubbard chain with Lindblad dephasing,
-targeted additional dephasing at sites of high local occupation variance
-produces more future local occupation loss than matched-budget random
-targeting in the $J/U=0.30$--$0.40$ regime.
-The effect is positive and robust at $J/U\in\{0.30,0.40\}$ across three
-time horizons ($\tau\in\{1,2,3\}$) and two chain lengths ($L\in\{6,7\}$),
-with bootstrap confidence intervals excluding zero at every tested point
-in that range.
-The lowest tested coupling ($J/U=0.12$) is uniformly negative, while
-$J/U=0.20$ is transitional and size-sensitive.
-The observed spatial response is more consistent with nonlocal
-redistribution of occupation loss than with a purely local-instability
-account.
-All results are computed by exact Lindblad evolution in the
-fixed-particle-number sector; no approximations are used.
+We show that sites of high local occupation variance
+$F_i = \langle\nop_i^2\rangle - \langle\nop_i\rangle^2$
+function as causal handles on future local occupation loss in an open
+one-dimensional Bose--Hubbard chain under Lindblad dephasing.
+Applying additional dephasing at the top-$k$ highest-$F_i$ sites produces
+more local occupation loss than an equal-budget random targeting
+at $J/U\in\{0.30,0.40\}$, with 95\% bootstrap confidence intervals
+excluding zero across all three tested time horizons ($\tau\in\{1,2,3\}$)
+and both tested chain lengths ($L\in\{6,7\}$).
+The effect is absent or reversed at the lowest tested coupling
+($J/U=0.12$) and size-sensitive at $J/U=0.20$; the handle is a
+regime-specific property of the dephasing operator, not a generic one.
+The site-resolved spatial response is more consistent with nonlocal
+redistribution of occupation change than with a local-instability
+mechanism.
+All results use exact Lindblad time evolution in the
+fixed-particle-number sector; no approximations are employed.
 \end{abstract}
 
 \maketitle
@@ -55,31 +57,31 @@ fixed-particle-number sector; no approximations are used.
 
 The one-dimensional Bose--Hubbard model is a standard setting for studying
 the interplay of quantum tunnelling and on-site interactions in interacting
-boson systems~\citep{fisher1989,jaksch1998}.
+boson systems~\cite{fisher1989,jaksch1998}.
 At zero temperature the model exhibits a quantum phase transition between a
 superfluid phase (large $J/U$) and a Mott-insulating phase (small $J/U$),
 controlled by the ratio of tunnelling amplitude~$J$ to on-site
-interaction~$U$~\citep{kuhner2000,greiner2002}.
+interaction~$U$~\cite{kuhner2000,greiner2002}.
 The clean-system phase diagram and its experimental realisation in
-optical lattices~\citep{jaksch2005} have been extensively
-studied~\citep{greiner2002}.
+optical lattices~\cite{jaksch2005} have been extensively
+studied~\cite{greiner2002}.
 
 In the presence of dissipation---modelled by local dephasing in the
 Lindblad--Gorini--Kossakowski--Sudarshan (LGKS)
-framework~\citep{lindblad1976,gorini1976,breuer2002}---the system is
+framework~\cite{lindblad1976,gorini1976,breuer2002}---the system is
 driven away from the ground state and develops spatially heterogeneous
 fluctuation structure.
 Open quantum systems of this type arise naturally in cold-atom experiments
 where coupling to photon-field fluctuations causes local dephasing of
-on-site number states~\citep{pichler2010,poletti2012}.
+on-site number states~\cite{pichler2010,poletti2012}.
 More broadly, the engineering of dissipation as a resource for state
 preparation and quantum control has attracted significant theoretical and
-experimental attention~\citep{diehl2008,verstraete2009,sieberer2016,daley2014}.
+experimental attention~\cite{diehl2008,verstraete2009,sieberer2016,daley2014}.
 
 In classical lattice systems, local structural variables can serve as
 causal handles: targeted perturbations at structurally selected sites
 produce measurably different future outcomes from matched-budget
-perturbations at random sites~\citep{woodward2003}.
+perturbations at random sites~\cite{woodward2003}.
 Whether analogous causal handles exist in open quantum systems---where
 dynamics are governed by a Lindblad master equation and the state is a
 density matrix rather than a classical configuration---is an empirical
@@ -147,7 +149,7 @@ total particle number are conserved at all times.
 The Lindblad equation is converted to a superoperator acting on the
 vectorised density matrix in the row-major convention.
 Time evolution is computed by the action of the matrix exponential on
-the state vector, using \texttt{scipy.sparse.linalg.expm\_multiply}~\citep{scipy2020},
+the state vector, using \texttt{scipy.sparse.linalg.expm\_multiply}~\cite{scipy2020},
 which avoids forming the full propagator.
 No Trotter decomposition, stochastic unravelling, or other approximation
 is used.
@@ -238,7 +240,7 @@ at $L=6$.
 At $L=6$, the targeted intervention produces more local occupation loss
 than the random control throughout $J/U\in\{0.20,0.30,0.40\}$, with all
 confidence intervals in that range excluding zero, while the broader
-cross-size regime map (Section~\ref{sec:regime}) shows that $J/U=0.20$ is
+cross-size regime map (Sec.~\ref{sec:regime}) shows that $J/U=0.20$ is
 transitional.
 The lowest tested coupling $J/U=0.12$ is uniformly negative: the targeted
 intervention produces \emph{less} local loss than matched-budget random
@@ -330,7 +332,7 @@ operator but depends on the dynamical regime of the system.
 
 \subsection{Spatial response pattern}
 
-Figure~\ref{fig:mechanism} shows the site-resolved occupation change under
+Fig.~\ref{fig:mechanism} shows the site-resolved occupation change under
 targeted versus random intervention at $J/U=0.30$, $L=6$, $\tau=2$.
 The bars show the mean site-resolved occupation change under the
 deterministic targeted intervention and averaged across the 100
@@ -404,11 +406,11 @@ The tested range ($L\leq7$, $n_{\max}=3$) establishes the effect in the
 positive pocket but does not access the thermodynamic limit.
 Whether the positive pocket persists, broadens, or shifts at larger system
 sizes is an open question requiring approximate methods such as
-matrix-product-operator Lindblad evolution~\citep{daley2014}.
+matrix-product-operator Lindblad evolution~\cite{daley2014}.
 
 \begin{acknowledgments}
 The author thanks the open-source scientific Python community for the
-libraries underlying this work: NumPy, SciPy~\citep{scipy2020}, pandas,
+libraries underlying this work: NumPy, SciPy~\cite{scipy2020}, pandas,
 matplotlib, and tqdm.
 \end{acknowledgments}
 

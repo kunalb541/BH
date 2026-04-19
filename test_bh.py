@@ -40,7 +40,7 @@ def make_system(L=6, N=3, nmax=3, J_over_U=0.30, gamma=0.1):
     idx_map = basis_index(basis)
     D = len(basis)
 
-    H = build_hamiltonian(L, J, U, basis, idx_map)
+    H = build_hamiltonian(L, J, U, nmax, basis, idx_map)
     n_ops = [number_op(i, D, basis) for i in range(L)]
     n2_ops = [nop @ nop for nop in n_ops]
     L_ops = n_ops
@@ -106,7 +106,7 @@ class TestHamiltonianHermiticity:
         N = L // 2
         basis = build_basis(L, N, 3)
         idx_map = basis_index(basis)
-        H = build_hamiltonian(L, J_over_U, 1.0, basis, idx_map)
+        H = build_hamiltonian(L, J_over_U, 1.0, 3, basis, idx_map)
         np.testing.assert_allclose(
             H, H.conj().T, atol=1e-12,
             err_msg=f"H not Hermitian for L={L}, J/U={J_over_U}"
@@ -116,14 +116,14 @@ class TestHamiltonianHermiticity:
         """H should be real-valued (all matrix elements are real)."""
         basis = build_basis(6, 3, 3)
         idx_map = basis_index(basis)
-        H = build_hamiltonian(6, 0.30, 1.0, basis, idx_map)
+        H = build_hamiltonian(6, 0.30, 1.0, 3, basis, idx_map)
         assert np.isrealobj(H) or np.max(np.abs(H.imag)) < 1e-14
 
     def test_ground_state_is_lowest_eigenvalue(self):
         """eigh returns eigenvalues in ascending order; index 0 is ground state."""
         basis = build_basis(6, 3, 3)
         idx_map = basis_index(basis)
-        H = build_hamiltonian(6, 0.30, 1.0, basis, idx_map)
+        H = build_hamiltonian(6, 0.30, 1.0, 3, basis, idx_map)
         eigvals = np.linalg.eigvalsh(H)
         assert eigvals[0] <= eigvals[1], "Eigenvalues not sorted ascending"
         assert eigvals[0] < 0, "Ground state energy should be negative for J>0"
@@ -284,7 +284,7 @@ class TestBudgetEquality:
         basis = build_basis(L, N, nmax)
         idx_map = basis_index(basis)
         D = len(basis)
-        H = build_hamiltonian(L, 0.30, 1.0, basis, idx_map)
+        H = build_hamiltonian(L, 0.30, 1.0, nmax, basis, idx_map)
         n_ops = [number_op(i, D, basis) for i in range(L)]
         n2_ops = [nop @ nop for nop in n_ops]
 
