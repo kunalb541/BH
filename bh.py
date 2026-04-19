@@ -858,55 +858,89 @@ def run_disorder_realization(
     }
 
 
+def _disorder_worker(args):
+    """Spawn-safe worker: run one disorder realization and checkpoint it."""
+    (L, N, nmax, ju, mu_max, r,
+     gamma_base, gamma_extra, tau_list, n_trials,
+     burn_in_time, dis_seed_base, n_boot) = args
+
+    dis_rng = np.random.default_rng(_dis_seed(dis_seed_base, L, ju, mu_max, r, 0))
+    mu_vec  = dis_rng.uniform(-mu_max, mu_max, size=L)
+    t_seed  = _dis_seed(dis_seed_base, L, ju, mu_max, r, 1)
+
+    res = run_disorder_realization(
+        L, N, nmax, ju, mu_vec,
+        gamma_base, gamma_extra,
+        tau_list, n_trials,
+        burn_in_time, t_seed,
+        n_boot=n_boot, verbose=False,
+    )
+    res["mu_max"] = float(mu_max)
+    res["realization"] = r
+    save_json(res, _dis_ckpt_path(L, N, ju, mu_max, r))
+    return (L, N, ju, mu_max, r, res)
+
+
 def run_disorder_experiment(cfg, disorder_strengths, n_realizations,
-                             dis_seed_base, resume=False):
-    """Sweep (L, J/U, μ_max) × realization; each realization draws μ_i independently."""
-    all_dis = []
+                             dis_seed_base, resume=False, n_workers=1):
+    """Sweep (L, J/U, μ_max) × realization; each realization draws μ_i independently.
+
+    Realizations are independent and run in parallel across n_workers processes.
+    Checkpoints are written per-realization so interrupted runs can be resumed.
+    """
+    ckpt_cache   = {}   # (L, N, ju, mu_max, r) -> result dict
+    pending_args = []   # tasks that still need to run
 
     for L in cfg["L_LIST"]:
         N = L // 2
         for ju in cfg["J_OVER_U_LIST"]:
             for mu_max in disorder_strengths:
-                realization_results = []
-                n_skip = 0
-
-                pbar = tqdm(range(n_realizations),
-                            desc=f"  dis L={L} J/U={ju:.2f} μ={mu_max:.2f}",
-                            ncols=80)
-
-                for r in pbar:
+                for r in range(n_realizations):
+                    key  = (L, N, ju, mu_max, r)
                     ckpt = _dis_ckpt_path(L, N, ju, mu_max, r)
                     if resume and os.path.exists(ckpt):
                         with open(ckpt) as f:
-                            realization_results.append(json.load(f))
-                        n_skip += 1
-                        continue
+                            ckpt_cache[key] = json.load(f)
+                    else:
+                        pending_args.append((
+                            L, N, cfg["NMAX"], ju, mu_max, r,
+                            cfg["GAMMA_BASE"], cfg["GAMMA_EXTRA"],
+                            cfg["TAU_LIST"], cfg["N_TRIALS"],
+                            cfg["BURN_IN_TIME"], dis_seed_base,
+                            cfg.get("N_BOOT", 1000),
+                        ))
 
-                    dis_rng = np.random.default_rng(
-                        _dis_seed(dis_seed_base, L, ju, mu_max, r, 0))
-                    mu_vec  = dis_rng.uniform(-mu_max, mu_max, size=L)
-                    t_seed  = _dis_seed(dis_seed_base, L, ju, mu_max, r, 1)
+    n_skip  = len(ckpt_cache)
+    n_total = n_skip + len(pending_args)
+    print(f"\nDisorder realizations: {n_total} total | {n_skip} from checkpoint "
+          f"| {len(pending_args)} to run | {n_workers} workers\n")
 
-                    res = run_disorder_realization(
-                        L, N, cfg["NMAX"], ju, mu_vec,
-                        cfg["GAMMA_BASE"], cfg["GAMMA_EXTRA"],
-                        cfg["TAU_LIST"], cfg["N_TRIALS"],
-                        cfg["BURN_IN_TIME"], t_seed,
-                        n_boot=cfg.get("N_BOOT", 1000),
-                        verbose=False,
-                    )
-                    res["mu_max"] = float(mu_max)
-                    res["realization"] = r
-                    save_json(res, ckpt)
-                    realization_results.append(res)
+    new_cache = {}
+    if pending_args:
+        n_w = min(n_workers, len(pending_args))
+        ctx = mp.get_context("spawn")
+        with ctx.Pool(n_w, initializer=_worker_init) as pool:
+            for L_, N_, ju_, mu_max_, r_, res in tqdm(
+                    pool.imap_unordered(_disorder_worker, pending_args),
+                    total=len(pending_args), desc="Disorder realizations", ncols=80):
+                new_cache[(L_, N_, ju_, mu_max_, r_)] = res
 
-                if n_skip:
-                    print(f"    ({n_skip} realizations from checkpoint)")
-
+    # Reassemble in deterministic order
+    all_dis = []
+    for L in cfg["L_LIST"]:
+        N = L // 2
+        for ju in cfg["J_OVER_U_LIST"]:
+            for mu_max in disorder_strengths:
+                reals = []
+                for r in range(n_realizations):
+                    key = (L, N, ju, mu_max, r)
+                    entry = ckpt_cache.get(key) or new_cache.get(key)
+                    if entry is not None:
+                        reals.append(entry)
                 all_dis.append({
                     "L": L, "N": N, "J_over_U": ju,
                     "mu_max": mu_max,
-                    "realizations": realization_results,
+                    "realizations": reals,
                 })
 
     return all_dis
@@ -1141,6 +1175,8 @@ def parse_args():
                    help="Disorder realizations per (L, J/U, μ_max) (default: 20).")
     p.add_argument("--disorder-seed", type=int, default=None,
                    help="Base RNG seed for disorder draws (default: SEED + 1).")
+    p.add_argument("--dis-workers", type=int, default=1,
+                   help="Parallel workers for disorder realizations (default: 1).")
     return p.parse_args()
 
 
@@ -1187,7 +1223,7 @@ def main():
         print(f"  Disorder seed      : {dis_seed}\n")
         all_dis = run_disorder_experiment(
             cfg, dis_strengths, args.disorder_realizations,
-            dis_seed, resume=args.resume)
+            dis_seed, resume=args.resume, n_workers=args.dis_workers)
         print_disorder_summary(all_dis)
         make_disorder_outputs(all_dis)
         print(f"\nDone. {time.time() - t0:.0f}s")
