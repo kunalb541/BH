@@ -1981,7 +1981,7 @@ def make_inhomogeneous_outputs(results):
     print(f"\nInhomogeneous CSV → {csv_path}")
 
     # Figure: fi_vs_rnd and geo_vs_rnd vs J/U, one row per pattern
-    tau_ref   = 3.0
+    tau_ref   = max(df["tau"].unique())   # use max available tau (no hardcoded 3.0)
     pat_list  = sorted(df["pattern"].unique())
     L6        = df[(df["L"] == df["L"].min()) & np.isclose(df["tau"], tau_ref)]
     if L6.empty:
@@ -2156,7 +2156,7 @@ def make_gamma_scan_outputs(all_gs):
     fig, axes = plt.subplots(1, len(tau_vals), figsize=(5 * len(tau_vals), 5), sharey=True)
     if len(tau_vals) == 1:
         axes = [axes]
-    cmap = plt.cm.get_cmap("viridis", len(ju_vals))
+    cmap = matplotlib.colormaps["viridis"].resampled(len(ju_vals))
     for ax, tau in zip(axes, tau_vals):
         sub = L6[np.isclose(L6["tau"], tau)]
         for i, ju in enumerate(ju_vals):
