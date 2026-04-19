@@ -111,7 +111,12 @@ def number_op(site, D, basis):
     return op
 
 
-def build_hamiltonian(L, J, U, nmax, basis, idx_map):
+def build_hamiltonian(L, J, U, nmax, basis, idx_map, mu=None):
+    """Bose-Hubbard Hamiltonian with optional on-site disorder.
+
+    mu : array-like of length L or None.
+         If provided, adds Σ_i μ_i n̂_i to the diagonal (on-site potential).
+    """
     D = len(basis)
     H = np.zeros((D, D), dtype=np.float64)
 
@@ -119,6 +124,8 @@ def build_hamiltonian(L, J, U, nmax, basis, idx_map):
         for site in range(L):
             ni = state[site]
             H[state_idx, state_idx] += 0.5 * U * ni * (ni - 1)
+            if mu is not None:
+                H[state_idx, state_idx] += mu[site] * ni
 
     for site in range(L - 1):
         for state_idx, state in enumerate(basis):
@@ -664,6 +671,347 @@ def write_adjudication(all_res):
 
 
 # ---------------------------------------------------------------------------
+# DISORDER EXPERIMENT  —  symmetry-breaking identifiability test
+# ---------------------------------------------------------------------------
+#
+# Scientific purpose
+# ------------------
+# In the symmetric open-chain model the high-F_i selector and the geometric
+# central-k selector are identical by reflection symmetry.  To test whether
+# the causal-handle effect is driven by variance-specific information or
+# merely by spatial position, we add weak on-site disorder
+#
+#   H  →  H + Σ_i μ_i n̂_i,   μ_i ~ Uniform(−μ_max, +μ_max)
+#
+# which breaks the reflection symmetry and decorrelates the two selectors.
+# Three arms are compared for each disorder realization:
+#
+#   fi  – top-k sites by post-burn-in local variance F_i
+#   geo – k geometrically central sites (fixed by geometry alone)
+#   rnd – k randomly chosen sites (n_trials independent draws)
+#
+# Each arm targets and measures at its own sites (matched-budget design).
+# Selector overlap |S_fi ∩ S_geo| / k is logged per realization.
+#
+# Verdict rules (aggregate over realizations, 95% CI from realization bootstrap)
+# -------------------------------------------------------------------------------
+#   fi beats random, geo does not          → variance-specific causal leverage
+#   both fi and geo beat random, fi > geo  → variance adds beyond geometry
+#   both beat random, fi ≈ geo             → selector-class persists under disorder
+#   neither beats random                   → effect dissolves under disorder
+# ---------------------------------------------------------------------------
+
+def geo_central_sites(L, k):
+    """Return the k site indices geometrically closest to the chain midpoint.
+
+    Tie-breaking for even L (equidistant pairs): Python's stable sort preserves
+    ascending index order, giving the lower-index site priority.  This is
+    deterministic and consistent across all realizations.
+    """
+    center = (L - 1) / 2.0
+    return sorted(sorted(range(L), key=lambda i: abs(i - center))[:k])
+
+
+def selector_overlap(sites_a, sites_b):
+    """Intersection-over-k: |A ∩ B| / k.  Range [0, 1]; 1 = identical sets."""
+    k = len(sites_a)
+    return len(set(sites_a) & set(sites_b)) / k if k > 0 else 0.0
+
+
+def _dis_ckpt_path(L, N, J_over_U, mu_max, realization):
+    tag = f"L{L}_N{N}_JU{J_over_U:.4f}_mu{mu_max:.4f}_r{realization:03d}"
+    return os.path.join(CKPT_DIR, f"dis_{tag}.json")
+
+
+def _dis_seed(base, L, ju, mu_max, r, offset):
+    """Collision-resistant deterministic seed from all identifying parameters."""
+    import hashlib
+    key = f"{base}:{L}:{ju:.8f}:{mu_max:.8f}:{r}:{offset}"
+    return int(hashlib.sha256(key.encode()).hexdigest()[:8], 16)
+
+
+def run_disorder_realization(
+        L, N, nmax, J_over_U, mu_vec,
+        gamma_base, gamma_extra,
+        tau_list, n_trials, burn_in_time,
+        trial_seed, n_boot=1000, verbose=False):
+    """Single disorder realization: three targeting arms.
+
+    The random arm draws are shared between fi and geo comparisons so that
+    both deterministic arms are benchmarked against the same random draws
+    within a realization — eliminating noise in the fi-vs-geo comparison.
+    """
+    U = 1.0
+    J = J_over_U * U
+
+    basis    = build_basis(L, N, nmax)
+    idx_map  = basis_index(basis)
+    D        = len(basis)
+    k        = max(1, int(np.ceil(L / 3)))
+
+    H        = build_hamiltonian(L, J, U, nmax, basis, idx_map, mu=mu_vec)
+    n_ops    = [number_op(i, D, basis) for i in range(L)]
+    n_diags  = np.array([np.diag(op) for op in n_ops], dtype=np.float64)
+    n2_diags = n_diags ** 2
+
+    liouv_base       = build_liouvillian(H, n_ops, [gamma_base] * L)
+    site_diss_scaled = [gamma_extra * _make_site_dissipator(n_ops[i], D)
+                        for i in range(L)]
+
+    eigvals, eigvecs = np.linalg.eigh(H)
+    psi0      = eigvecs[:, 0]
+    rho_burn  = evolve_rho(np.outer(psi0, psi0.conj()), liouv_base, burn_in_time)
+    rho_bd    = np.real(np.diag(rho_burn))
+
+    Fi      = _fast_variances(rho_bd, n_diags, n2_diags)
+    s_fi    = sorted(np.argsort(Fi)[-k:].tolist())
+    s_geo   = geo_central_sites(L, k)
+    overlap = selector_overlap(s_fi, s_geo)
+
+    occ_before = _fast_expectations(rho_bd, n_diags)
+    rng        = np.random.default_rng(trial_seed)
+
+    def _det_liouv(sites):
+        op = liouv_base + sum(site_diss_scaled[s] for s in sites)
+        return op.tocsr() if sp.issparse(op) else op
+
+    liouv_fi  = _det_liouv(s_fi)
+    liouv_geo = _det_liouv(s_geo)
+
+    tau_results = []
+
+    for tau in tau_list:
+        occ_fi  = _fast_expectations(
+            np.real(np.diag(evolve_rho(rho_burn, liouv_fi,  tau))), n_diags)
+        occ_geo = _fast_expectations(
+            np.real(np.diag(evolve_rho(rho_burn, liouv_geo, tau))), n_diags)
+
+        loss_fi  = float(sum(max(0., occ_before[s] - occ_fi[s])  for s in s_fi))
+        loss_geo = float(sum(max(0., occ_before[s] - occ_geo[s]) for s in s_geo))
+
+        # Shared random baseline: same draws benchmarked against both arms.
+        diffs_fi_rnd  = np.empty(n_trials)
+        diffs_geo_rnd = np.empty(n_trials)
+
+        it = range(n_trials)
+        if verbose:
+            it = tqdm(it, desc=f"  dis L={L} τ={tau:.0f}", leave=False, ncols=80)
+
+        for t in it:
+            rsites  = rng.choice(L, size=k, replace=False).tolist()
+            addons  = [site_diss_scaled[s] for s in rsites]
+            op_r    = (_make_additive_op(liouv_base, addons)
+                       if sp.issparse(liouv_base)
+                       else liouv_base + sum(addons))
+            occ_rnd  = _fast_expectations(
+                np.real(np.diag(evolve_rho(rho_burn, op_r, tau))), n_diags)
+            loss_rnd = float(sum(max(0., occ_before[s] - occ_rnd[s]) for s in rsites))
+
+            diffs_fi_rnd[t]  = loss_fi  - loss_rnd
+            diffs_geo_rnd[t] = loss_geo - loss_rnd
+
+        def _ci(diffs):
+            lo, hi = _bootstrap_ci(diffs, n_boot, rng)
+            return {"mean": float(np.mean(diffs)), "ci_lo": lo, "ci_hi": hi}
+
+        tau_results.append({
+            "tau":          float(tau),
+            "fi_vs_rnd":    _ci(diffs_fi_rnd),
+            "geo_vs_rnd":   _ci(diffs_geo_rnd),
+            "fi_loss":      loss_fi,
+            "geo_loss":     loss_geo,
+            "fi_minus_geo": loss_fi - loss_geo,
+        })
+
+    return {
+        "L": L, "N": N, "J_over_U": J_over_U, "D": D, "k": k,
+        "mu": mu_vec.tolist(), "s_fi": s_fi, "s_geo": s_geo,
+        "overlap": overlap, "Fi": Fi.tolist(),
+        "results": tau_results,
+    }
+
+
+def run_disorder_experiment(cfg, disorder_strengths, n_realizations,
+                             dis_seed_base, resume=False):
+    """Sweep (L, J/U, μ_max) × realization; each realization draws μ_i independently."""
+    all_dis = []
+
+    for L in cfg["L_LIST"]:
+        N = L // 2
+        for ju in cfg["J_OVER_U_LIST"]:
+            for mu_max in disorder_strengths:
+                realization_results = []
+                n_skip = 0
+
+                pbar = tqdm(range(n_realizations),
+                            desc=f"  dis L={L} J/U={ju:.2f} μ={mu_max:.2f}",
+                            ncols=80)
+
+                for r in pbar:
+                    ckpt = _dis_ckpt_path(L, N, ju, mu_max, r)
+                    if resume and os.path.exists(ckpt):
+                        with open(ckpt) as f:
+                            realization_results.append(json.load(f))
+                        n_skip += 1
+                        continue
+
+                    dis_rng = np.random.default_rng(
+                        _dis_seed(dis_seed_base, L, ju, mu_max, r, 0))
+                    mu_vec  = dis_rng.uniform(-mu_max, mu_max, size=L)
+                    t_seed  = _dis_seed(dis_seed_base, L, ju, mu_max, r, 1)
+
+                    res = run_disorder_realization(
+                        L, N, cfg["NMAX"], ju, mu_vec,
+                        cfg["GAMMA_BASE"], cfg["GAMMA_EXTRA"],
+                        cfg["TAU_LIST"], cfg["N_TRIALS"],
+                        cfg["BURN_IN_TIME"], t_seed,
+                        n_boot=cfg.get("N_BOOT", 1000),
+                        verbose=False,
+                    )
+                    res["mu_max"] = float(mu_max)
+                    res["realization"] = r
+                    save_json(res, ckpt)
+                    realization_results.append(res)
+
+                if n_skip:
+                    print(f"    ({n_skip} realizations from checkpoint)")
+
+                all_dis.append({
+                    "L": L, "N": N, "J_over_U": ju,
+                    "mu_max": mu_max,
+                    "realizations": realization_results,
+                })
+
+    return all_dis
+
+
+def print_disorder_summary(all_dis):
+    """Print per-condition aggregate verdict to stdout."""
+    print("\n=== Disorder Experiment Summary ===")
+    for cond in all_dis:
+        L, ju, mu_max = cond["L"], cond["J_over_U"], cond["mu_max"]
+        reals = cond["realizations"]
+        if not reals:
+            continue
+        mean_ovl = float(np.mean([r["overlap"] for r in reals]))
+        print(f"\nL={L}  J/U={ju:.2f}  μ_max={mu_max:.2f}  "
+              f"mean_overlap={mean_ovl:.3f}  n_real={len(reals)}")
+        tau_vals = [tr["tau"] for tr in reals[0]["results"]]
+        for i, tau in enumerate(tau_vals):
+            fi_means  = [r["results"][i]["fi_vs_rnd"]["mean"]  for r in reals]
+            geo_means = [r["results"][i]["geo_vs_rnd"]["mean"] for r in reals]
+            fig_diffs = [r["results"][i]["fi_minus_geo"]       for r in reals]
+            rng_agg   = np.random.default_rng(99)
+            fi_lo,  fi_hi  = _bootstrap_ci(np.array(fi_means),  1000, rng_agg)
+            geo_lo, geo_hi = _bootstrap_ci(np.array(geo_means), 1000, rng_agg)
+            fg_lo,  fg_hi  = _bootstrap_ci(np.array(fig_diffs), 1000, rng_agg)
+            fi_tag  = "PASS" if fi_lo  > 0 else ("FAIL" if fi_hi  < 0 else "ZERO")
+            geo_tag = "PASS" if geo_lo > 0 else ("FAIL" if geo_hi < 0 else "ZERO")
+            if fi_lo > 0 and geo_lo <= 0:
+                verdict = "VARIANCE-SPECIFIC"
+            elif fi_lo > 0 and geo_lo > 0 and fg_lo > 0:
+                verdict = "FI>GEO (variance adds)"
+            elif fi_lo > 0 and geo_lo > 0:
+                verdict = "SELECTOR-CLASS (fi≈geo, both beat rnd)"
+            elif fi_lo <= 0 and geo_lo <= 0:
+                verdict = "NULL (neither beats rnd)"
+            else:
+                verdict = "INCONCLUSIVE"
+            print(f"  τ={tau:.0f}  fi_vs_rnd={np.mean(fi_means):.4f} "
+                  f"[{fi_lo:.4f},{fi_hi:.4f}] {fi_tag}"
+                  f"  geo_vs_rnd={np.mean(geo_means):.4f} "
+                  f"[{geo_lo:.4f},{geo_hi:.4f}] {geo_tag}"
+                  f"  fi-geo={np.mean(fig_diffs):.4f} [{fg_lo:.4f},{fg_hi:.4f}]"
+                  f"  → {verdict}")
+
+
+def make_disorder_outputs(all_dis):
+    """Write CSV and figure for the disorder identifiability experiment."""
+    rows = []
+    for cond in all_dis:
+        L, ju, mu_max = cond["L"], cond["J_over_U"], cond["mu_max"]
+        reals = cond["realizations"]
+        if not reals:
+            continue
+        overlaps = [r["overlap"] for r in reals]
+        tau_vals = [tr["tau"] for tr in reals[0]["results"]]
+        for i, tau in enumerate(tau_vals):
+            fi_means  = [r["results"][i]["fi_vs_rnd"]["mean"]  for r in reals]
+            geo_means = [r["results"][i]["geo_vs_rnd"]["mean"] for r in reals]
+            fig_diffs = [r["results"][i]["fi_minus_geo"]       for r in reals]
+            rows.append({
+                "L": L, "J_over_U": ju, "mu_max": mu_max, "tau": tau,
+                "mean_overlap":  float(np.mean(overlaps)),
+                "std_overlap":   float(np.std(overlaps)),
+                "fi_rnd_mean":   float(np.mean(fi_means)),
+                "fi_rnd_std":    float(np.std(fi_means)),
+                "geo_rnd_mean":  float(np.mean(geo_means)),
+                "geo_rnd_std":   float(np.std(geo_means)),
+                "fi_geo_mean":   float(np.mean(fig_diffs)),
+                "fi_geo_std":    float(np.std(fig_diffs)),
+                "n_real":        len(reals),
+            })
+
+    if not rows:
+        print("No disorder results to write.")
+        return
+
+    df = pd.DataFrame(rows)
+    csv_path = os.path.join(TAB_DIR, "disorder_results.csv")
+    df.to_csv(csv_path, index=False)
+    print(f"\nDisorder CSV → {csv_path}")
+
+    # Figure: fi-vs-rnd and geo-vs-rnd grouped by disorder strength
+    tau_vals  = sorted(df["tau"].unique())
+    mu_vals   = sorted(df["mu_max"].unique())
+    n_tau     = len(tau_vals)
+
+    fig, axes = plt.subplots(1, n_tau, figsize=(5 * n_tau, 5), sharey=True)
+    if n_tau == 1:
+        axes = [axes]
+
+    for ax, tau in zip(axes, tau_vals):
+        sub = df[abs(df["tau"] - tau) < 0.01]
+        x = np.arange(len(mu_vals))
+        w = 0.32
+        for offset, (arm, col, lbl) in enumerate(
+                [("fi",  "C0", "fi vs rnd"),
+                 ("geo", "C1", "geo vs rnd")]):
+            y   = [sub[abs(sub["mu_max"] - m) < 1e-9][f"{arm}_rnd_mean"].mean()
+                   for m in mu_vals]
+            err = [sub[abs(sub["mu_max"] - m) < 1e-9][f"{arm}_rnd_std"].mean()
+                   for m in mu_vals]
+            ax.bar(x + (offset - 0.5) * w, y, w, yerr=err, capsize=4,
+                   label=lbl, color=col, alpha=0.82, ecolor="black", error_kw={"lw": 1})
+        ax.axhline(0, color="gray", lw=0.7, ls=":")
+        ax.set_xticks(x)
+        ax.set_xticklabels([f"μ={m:.2f}" for m in mu_vals])
+        ax.set_xlabel("Disorder strength μ_max")
+        ax.set_title(f"τ = {tau:.0f}")
+        ax.legend(fontsize=9)
+
+    axes[0].set_ylabel("Mean loss diff vs random (across realizations)")
+
+    # Inset on last panel: mean selector overlap vs disorder strength
+    ax_ovl = axes[-1].inset_axes([0.55, 0.55, 0.42, 0.38])
+    ovl_by_mu = (df.groupby("mu_max")["mean_overlap"].mean()
+                   .reindex(sorted(df["mu_max"].unique())))
+    ax_ovl.plot(ovl_by_mu.index, ovl_by_mu.values, "k-o", ms=5, lw=1.5)
+    ax_ovl.set_ylim(-0.05, 1.1)
+    ax_ovl.set_xlabel("μ_max", fontsize=8)
+    ax_ovl.set_ylabel("overlap", fontsize=8)
+    ax_ovl.set_title("Selector overlap", fontsize=8)
+    ax_ovl.tick_params(labelsize=7)
+
+    fig.suptitle(
+        "Disorder identifiability: fi-selector vs geo-selector vs random",
+        fontsize=11, y=1.01)
+    fig.tight_layout()
+    savefig(fig, "fig_disorder")
+    print(f"Disorder figure → {os.path.join(FIG_DIR, 'fig_disorder.pdf')}")
+
+
+# ---------------------------------------------------------------------------
 # CLI + MAIN
 # ---------------------------------------------------------------------------
 
@@ -692,6 +1040,17 @@ def parse_args():
                    help="Skip figure generation.")
     p.add_argument("--no-tables", action="store_true",
                    help="Skip table generation.")
+    # Disorder experiment flags
+    p.add_argument("--disorder", action="store_true",
+                   help="Run symmetry-breaking disorder identifiability experiment "
+                        "instead of the main sweep.")
+    p.add_argument("--disorder-strengths", nargs="+", type=float, default=None,
+                   help="On-site disorder amplitudes μ_max in units of U "
+                        "(default: 0.10 0.20).")
+    p.add_argument("--disorder-realizations", type=int, default=20,
+                   help="Disorder realizations per (L, J/U, μ_max) (default: 20).")
+    p.add_argument("--disorder-seed", type=int, default=None,
+                   help="Base RNG seed for disorder draws (default: SEED + 1).")
     return p.parse_args()
 
 
@@ -729,7 +1088,22 @@ def main():
 
     save_json(cfg, os.path.join(DATA_DIR, "config.json"))
 
-    # --- Run ---
+    # --- Disorder experiment (runs instead of main sweep when --disorder is set) ---
+    if args.disorder:
+        dis_strengths = args.disorder_strengths or [0.10, 0.20]
+        dis_seed      = args.disorder_seed or (cfg["SEED"] + 1)
+        print(f"  Disorder strengths : {dis_strengths}")
+        print(f"  Realizations       : {args.disorder_realizations}")
+        print(f"  Disorder seed      : {dis_seed}\n")
+        all_dis = run_disorder_experiment(
+            cfg, dis_strengths, args.disorder_realizations,
+            dis_seed, resume=args.resume)
+        print_disorder_summary(all_dis)
+        make_disorder_outputs(all_dis)
+        print(f"\nDone. {time.time() - t0:.0f}s")
+        return
+
+    # --- Main sweep ---
     all_res = run_all(cfg, n_workers=args.workers, resume=args.resume)
     print_summary(all_res)
 
