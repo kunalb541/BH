@@ -1623,9 +1623,35 @@ def run_selector_sweep_realization(
     n_diags  = np.array([np.diag(op) for op in n_ops], dtype=np.float64)
     n2_diags = n_diags ** 2
 
-    liouv_base       = build_liouvillian(H, n_ops, [gamma_base] * L)
-    site_diss_scaled = [gamma_extra * _make_site_dissipator(n_ops[i], D)
-                        for i in range(L)]
+    liouv_base = build_liouvillian(H, n_ops, [gamma_base] * L)
+
+    # Memory-efficient dissipator storage.
+    # For dephasing (L_i = n_i diagonal), the D²×D² superoperator dissipator is
+    # DIAGONAL: entry (j·D+k, j·D+k) = n_i[j]·n_i[k] − ½(n_i[j]² + n_i[k]²).
+    # Store only the D² diagonal values (~25 KB each) rather than the full dense
+    # D²×D² matrix (~150 MB each for L=6).  Saves ~900 MB per worker for L=6.
+    if sp.issparse(liouv_base):
+        # Sparse path: full sparse CSR dissipators, as before.
+        site_diss_scaled = [gamma_extra * _make_site_dissipator(n_ops[i], D)
+                            for i in range(L)]
+        def _build_lv(sites):
+            """Build selector/trial Liouvillian (sparse path)."""
+            return (liouv_base + sum(site_diss_scaled[s] for s in sites)).tocsr()
+    else:
+        # Dense path: store only the diagonal of each dissipator.
+        def _diss_diag_i(i):
+            nv = n_diags[i]   # already extracted, shape (D,)
+            return (nv[:, None] * nv[None, :] - 0.5 * (nv[:, None]**2 + nv[None, :]**2)
+                    ).ravel().astype(complex)
+        site_diss_diags = np.array([gamma_extra * _diss_diag_i(i) for i in range(L)])
+        # shape (L, D²): ~25 KB × L vs ~150 MB × L for the full dense matrices
+        _diag_idx = (np.arange(D * D), np.arange(D * D))
+
+        def _build_lv(sites):
+            """Build selector/trial Liouvillian (dense path, no full dissipator stored)."""
+            lv = liouv_base.copy()
+            lv[_diag_idx] += sum(site_diss_diags[s] for s in sites)
+            return lv
 
     eigvals, eigvecs = np.linalg.eigh(H)
     psi0      = eigvecs[:, 0]
@@ -1652,21 +1678,26 @@ def run_selector_sweep_realization(
     SEL = {"fi": s_fi, "geo": s_geo, "maxn": s_maxn, "minn": s_minn,
            "bdy": s_bdy, "anti": s_anti, "gen": s_gen}
 
-    def _det_liouv(sites):
-        op = liouv_base + sum(site_diss_scaled[s] for s in sites)
-        return op.tocsr() if sp.issparse(op) else op
-
-    liouv_sel = {name: _det_liouv(sites) for name, sites in SEL.items()}
     rng = np.random.default_rng(trial_seed)
 
     def _loss_at(occ, sites):
         return float(sum(max(0., occ_before[s] - occ[s]) for s in sites))
 
+    # Pre-compute selector occupations one selector at a time.
+    # Using _build_lv() instead of pre-building all 7 Liouvillians simultaneously
+    # avoids holding 7 × ~150 MB dense matrices at once → fits on 30 GB with 16 workers.
+    _occ_sel_by_tau = {name: [] for name in SEL}   # name → [occ@tau0, occ@tau1, ...]
+    for name, sites in SEL.items():
+        lv = _build_lv(sites)
+        for tau in tau_list:
+            _occ_sel_by_tau[name].append(
+                _fast_expectations(
+                    np.real(np.diag(evolve_rho(rho_burn, lv, tau))), n_diags))
+        del lv   # free ~150 MB before building the next selector Liouvillian
+
     tau_results = []
-    for tau in tau_list:
-        occ_sel = {name: _fast_expectations(
-            np.real(np.diag(evolve_rho(rho_burn, lv, tau))), n_diags)
-            for name, lv in liouv_sel.items()}
+    for t_idx, tau in enumerate(tau_list):
+        occ_sel = {name: _occ_sel_by_tau[name][t_idx] for name in SEL}
 
         # Random baseline — evaluated at each selector's own sites AND at geo
         rnd_own = {name: np.empty(n_trials) for name in SEL}
@@ -1674,10 +1705,7 @@ def run_selector_sweep_realization(
 
         for t in range(n_trials):
             rsites = rng.choice(L, size=k, replace=False).tolist()
-            addons = [site_diss_scaled[s] for s in rsites]
-            op_r   = (_make_additive_op(liouv_base, addons)
-                      if sp.issparse(liouv_base)
-                      else liouv_base + sum(addons))
+            op_r   = _build_lv(rsites)
             occ_r  = _fast_expectations(
                 np.real(np.diag(evolve_rho(rho_burn, op_r, tau))), n_diags)
             for name, sites in SEL.items():
