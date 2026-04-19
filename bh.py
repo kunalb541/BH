@@ -673,7 +673,7 @@ def parse_args():
     p.add_argument("--pilot", action="store_true",
                    help="Smoke test: L={6,7}, tau=2 only, 20 trials.")
     p.add_argument("--l-list", nargs="+", type=int, default=None,
-                   help="Chain lengths to run (default: 6 7 8).")
+                   help="Chain lengths to run (default: 6 7 8 9).")
     p.add_argument("--ju-list", nargs="+", type=float, default=None,
                    help="J/U values (default: 0.12 0.20 0.30 0.40).")
     p.add_argument("--tau-list", nargs="+", type=float, default=None,
@@ -711,7 +711,7 @@ def main():
         "N_BOOT":        1000,
         "TAU_LIST":      [1.0, 2.0, 3.0],
         "J_OVER_U_LIST": [0.12, 0.20, 0.30, 0.40],
-        "L_LIST":        [6, 7, 8],
+        "L_LIST":        [6, 7, 8, 9],
     }
 
     if args.pilot:
