@@ -1590,6 +1590,593 @@ def make_shell_perm_outputs(all_sp):
 
 
 # ---------------------------------------------------------------------------
+# SELECTOR SWEEP EXPERIMENT
+# Compares fi, geo, maxn, minn, boundary, anti-fi, gen against random.
+# Reuses dis_*.json mu_vec so same realizations as disorder experiment.
+# ---------------------------------------------------------------------------
+
+def _sel_ckpt_path(L, N, J_over_U, mu_max, realization):
+    tag = f"L{L}_N{N}_JU{J_over_U:.4f}_mu{mu_max:.4f}_r{realization:03d}"
+    return os.path.join(CKPT_DIR, f"sel_{tag}.json")
+
+
+def run_selector_sweep_realization(
+        L, N, nmax, J_over_U, mu_vec,
+        gamma_base, gamma_extra,
+        tau_list, n_trials, burn_in_time,
+        trial_seed, n_boot=1000):
+    """Compare all natural selectors vs random for one disorder realization.
+
+    Selectors: fi, geo, maxn, minn, bdy, anti, gen.
+    Each is evaluated at its own sites (own-site) and at geo-sites (fixed-eval).
+    """
+    U = 1.0
+    J = J_over_U * U
+
+    basis    = build_basis(L, N, nmax)
+    idx_map  = basis_index(basis)
+    D        = len(basis)
+    k        = max(1, int(np.ceil(L / 3)))
+
+    H        = build_hamiltonian(L, J, U, nmax, basis, idx_map, mu=mu_vec)
+    n_ops    = [number_op(i, D, basis) for i in range(L)]
+    n_diags  = np.array([np.diag(op) for op in n_ops], dtype=np.float64)
+    n2_diags = n_diags ** 2
+
+    liouv_base       = build_liouvillian(H, n_ops, [gamma_base] * L)
+    site_diss_scaled = [gamma_extra * _make_site_dissipator(n_ops[i], D)
+                        for i in range(L)]
+
+    eigvals, eigvecs = np.linalg.eigh(H)
+    psi0      = eigvecs[:, 0]
+    rho_burn  = evolve_rho(np.outer(psi0, psi0.conj()), liouv_base, burn_in_time)
+    rho_bd    = np.real(np.diag(rho_burn))
+
+    Fi         = _fast_variances(rho_bd, n_diags, n2_diags)
+    occ_before = _fast_expectations(rho_bd, n_diags)
+
+    # --- Build all selectors ---
+    s_fi   = sorted(np.argsort(Fi)[-k:].tolist())
+    s_geo  = geo_central_sites(L, k)
+    s_maxn = sorted(np.argsort(occ_before)[-k:].tolist())
+    s_minn = sorted(np.argsort(occ_before)[:k].tolist())
+    n_right = k // 2
+    n_left  = k - n_right
+    s_bdy  = sorted(list(range(n_left)) + list(range(L - n_right, L)))
+    s_anti = sorted(np.argsort(Fi)[:k].tolist())
+    comm_diag   = np.diag(H @ rho_burn - rho_burn @ H)
+    gen_actions = np.array([float(np.real(-1j * np.dot(n_diags[i], comm_diag)))
+                            for i in range(L)])
+    s_gen = sorted(np.argsort(np.abs(gen_actions))[-k:].tolist())
+
+    SEL = {"fi": s_fi, "geo": s_geo, "maxn": s_maxn, "minn": s_minn,
+           "bdy": s_bdy, "anti": s_anti, "gen": s_gen}
+
+    def _det_liouv(sites):
+        op = liouv_base + sum(site_diss_scaled[s] for s in sites)
+        return op.tocsr() if sp.issparse(op) else op
+
+    liouv_sel = {name: _det_liouv(sites) for name, sites in SEL.items()}
+    rng = np.random.default_rng(trial_seed)
+
+    def _loss_at(occ, sites):
+        return float(sum(max(0., occ_before[s] - occ[s]) for s in sites))
+
+    tau_results = []
+    for tau in tau_list:
+        occ_sel = {name: _fast_expectations(
+            np.real(np.diag(evolve_rho(rho_burn, lv, tau))), n_diags)
+            for name, lv in liouv_sel.items()}
+
+        # Random baseline — evaluated at each selector's own sites AND at geo
+        rnd_own = {name: np.empty(n_trials) for name in SEL}
+        rnd_geo = {name: np.empty(n_trials) for name in SEL}
+
+        for t in range(n_trials):
+            rsites = rng.choice(L, size=k, replace=False).tolist()
+            addons = [site_diss_scaled[s] for s in rsites]
+            op_r   = (_make_additive_op(liouv_base, addons)
+                      if sp.issparse(liouv_base)
+                      else liouv_base + sum(addons))
+            occ_r  = _fast_expectations(
+                np.real(np.diag(evolve_rho(rho_burn, op_r, tau))), n_diags)
+            for name, sites in SEL.items():
+                rnd_own[name][t] = _loss_at(occ_r, sites)
+                rnd_geo[name][t] = _loss_at(occ_r, s_geo)
+
+        def _ci(diffs):
+            lo, hi = _bootstrap_ci(diffs, n_boot, rng)
+            return {"mean": float(np.mean(diffs)), "ci_lo": lo, "ci_hi": hi}
+
+        row = {"tau": float(tau), "selectors": {}}
+        for name, sites in SEL.items():
+            det_own  = _loss_at(occ_sel[name], sites)
+            det_on_geo = _loss_at(occ_sel[name], s_geo)
+            row["selectors"][name] = {
+                "sites":        sites,
+                "own_vs_rnd":   _ci(det_own  - rnd_own[name]),
+                "geo_vs_rnd":   _ci(det_on_geo - rnd_geo[name]),
+                "det_loss_own": det_own,
+                "det_loss_geo": det_on_geo,
+            }
+        tau_results.append(row)
+
+    return {
+        "L": L, "N": N, "J_over_U": J_over_U, "D": D, "k": k,
+        "mu": mu_vec.tolist(),
+        "sel_sites": {n: s for n, s in SEL.items()},
+        "Fi": Fi.tolist(), "occ_before": occ_before.tolist(),
+        "gen_actions_abs": np.abs(gen_actions).tolist(),
+        "results": tau_results,
+    }
+
+
+def _sel_worker(args):
+    (L, N, nmax, ju, mu_max, r,
+     gamma_base, gamma_extra, tau_list, n_trials,
+     burn_in_time, dis_seed_base, n_boot) = args
+
+    ckpt = _sel_ckpt_path(L, N, ju, mu_max, r)
+    if os.path.exists(ckpt):
+        return None
+
+    dis_ckpt = _dis_ckpt_path(L, N, ju, mu_max, r)
+    if os.path.exists(dis_ckpt):
+        with open(dis_ckpt) as f:
+            mu_vec = np.array(json.load(f)["mu"])
+    else:
+        rng = np.random.default_rng(_dis_seed(dis_seed_base, L, ju, mu_max, r, 0))
+        mu_vec = rng.uniform(-mu_max, mu_max, size=L)
+
+    t_seed = _dis_seed(dis_seed_base, L, ju, mu_max, r, 3)  # offset 3 = sel sweep
+    res    = run_selector_sweep_realization(
+        L, N, nmax, ju, mu_vec, gamma_base, gamma_extra,
+        tau_list, n_trials, burn_in_time, t_seed, n_boot)
+    save_json(res, ckpt)
+    return (L, N, ju, mu_max, r, res)
+
+
+def run_selector_sweep_experiment(cfg, disorder_strengths, n_realizations,
+                                   dis_seed_base, resume=False, n_workers=1):
+    ckpt_cache, pending = {}, []
+    for L in cfg["L_LIST"]:
+        N = L // 2
+        for ju in cfg["J_OVER_U_LIST"]:
+            for mu_max in disorder_strengths:
+                for r in range(n_realizations):
+                    key  = (L, N, ju, mu_max, r)
+                    ckpt = _sel_ckpt_path(L, N, ju, mu_max, r)
+                    if resume and os.path.exists(ckpt):
+                        with open(ckpt) as f:
+                            ckpt_cache[key] = json.load(f)
+                    else:
+                        pending.append((L, N, cfg["NMAX"], ju, mu_max, r,
+                                        cfg["GAMMA_BASE"], cfg["GAMMA_EXTRA"],
+                                        cfg["TAU_LIST"], cfg["N_TRIALS"],
+                                        cfg["BURN_IN_TIME"], dis_seed_base,
+                                        cfg.get("N_BOOT", 1000)))
+
+    n_skip  = len(ckpt_cache)
+    n_total = n_skip + len(pending)
+    print(f"\nSelector-sweep realizations: {n_total} total | {n_skip} from checkpoint "
+          f"| {len(pending)} to run | {n_workers} workers\n")
+
+    new_cache = {}
+    if pending:
+        ctx = mp.get_context("spawn")
+        with ctx.Pool(min(n_workers, len(pending)), initializer=_worker_init) as pool:
+            for out in tqdm(pool.imap_unordered(_sel_worker, pending),
+                            total=len(pending), desc="Selector-sweep realizations",
+                            ncols=90):
+                if out is not None:
+                    L_, N_, ju_, mu_, r_, res = out
+                    new_cache[(L_, N_, ju_, mu_, r_)] = res
+
+    all_sel = []
+    for L in cfg["L_LIST"]:
+        N = L // 2
+        for ju in cfg["J_OVER_U_LIST"]:
+            for mu_max in disorder_strengths:
+                reals = []
+                for r in range(n_realizations):
+                    key   = (L, N, ju, mu_max, r)
+                    entry = ckpt_cache.get(key) or new_cache.get(key)
+                    if entry is not None:
+                        reals.append(entry)
+                all_sel.append({"L": L, "N": N, "J_over_U": ju,
+                                 "mu_max": mu_max, "realizations": reals})
+    return all_sel
+
+
+def print_selector_sweep_summary(all_sel):
+    SEL_NAMES = ["fi", "geo", "maxn", "minn", "bdy", "anti", "gen"]
+    print("\n=== Selector Sweep Summary (own-site eval) ===\n")
+    for cond in all_sel:
+        L, ju, mu = cond["L"], cond["J_over_U"], cond["mu_max"]
+        reals = cond["realizations"]
+        if not reals:
+            continue
+        print(f"L={L}  J/U={ju:.2f}  μ_max={mu:.2f}  n_real={len(reals)}")
+        for tau_idx, tr in enumerate(reals[0]["results"]):
+            tau = tr["tau"]
+            print(f"  τ={tau:.0f}", end="")
+            for name in SEL_NAMES:
+                vals = [r["results"][tau_idx]["selectors"][name]["own_vs_rnd"]["mean"]
+                        for r in reals]
+                m  = float(np.mean(vals))
+                lo = float(np.percentile(vals, 2.5))
+                hi = float(np.percentile(vals, 97.5))
+                sign = "+" if lo > 0 else ("-" if hi < 0 else "~")
+                print(f"  {name}={m:+.4f}[{sign}]", end="")
+            print()
+        print()
+
+
+def make_selector_sweep_outputs(all_sel):
+    rows = []
+    for cond in all_sel:
+        L, ju, mu = cond["L"], cond["J_over_U"], cond["mu_max"]
+        for r_idx, res in enumerate(cond["realizations"]):
+            for tr in res["results"]:
+                tau = tr["tau"]
+                for sel_name, sd in tr["selectors"].items():
+                    rows.append({
+                        "L": L, "J_over_U": ju, "mu_max": mu,
+                        "realization": r_idx, "tau": tau,
+                        "selector": sel_name,
+                        "sites": str(sd["sites"]),
+                        "own_vs_rnd_mean":  sd["own_vs_rnd"]["mean"],
+                        "own_vs_rnd_ci_lo": sd["own_vs_rnd"]["ci_lo"],
+                        "own_vs_rnd_ci_hi": sd["own_vs_rnd"]["ci_hi"],
+                        "geo_vs_rnd_mean":  sd["geo_vs_rnd"]["mean"],
+                        "geo_vs_rnd_ci_lo": sd["geo_vs_rnd"]["ci_lo"],
+                        "geo_vs_rnd_ci_hi": sd["geo_vs_rnd"]["ci_hi"],
+                    })
+    if not rows:
+        print("No selector-sweep results to write.")
+        return
+    df = pd.DataFrame(rows)
+    csv_path = os.path.join(TAB_DIR, "selector_sweep_results.csv")
+    df.to_csv(csv_path, index=False)
+    print(f"\nSelector-sweep CSV → {csv_path}")
+
+    # Figure: mean own_vs_rnd per selector vs J/U, one panel per tau
+    SEL_NAMES  = ["fi", "geo", "gen", "maxn", "bdy", "minn", "anti"]
+    COLORS     = dict(fi="#2196F3", geo="#4CAF50", gen="#FF9800",
+                      maxn="#9C27B0", bdy="#F44336", minn="#00BCD4", anti="#795548")
+    tau_vals   = sorted(df["tau"].unique())
+    L6         = df[df["L"] == df["L"].min()]
+    fig, axes  = plt.subplots(1, len(tau_vals), figsize=(5 * len(tau_vals), 5),
+                               sharey=True)
+    if len(tau_vals) == 1:
+        axes = [axes]
+    for ax, tau in zip(axes, tau_vals):
+        sub = L6[np.isclose(L6["tau"], tau)]
+        agg = sub.groupby(["selector", "J_over_U"])["own_vs_rnd_mean"].mean().reset_index()
+        for sel in SEL_NAMES:
+            sg = agg[agg["selector"] == sel].sort_values("J_over_U")
+            ax.plot(sg["J_over_U"], sg["own_vs_rnd_mean"], marker="o",
+                    label=sel, color=COLORS.get(sel, "gray"))
+        ax.axhline(0, ls="--", color="black", lw=0.7)
+        ax.set_title(f"τ = {tau:.0f}")
+        ax.set_xlabel("J/U")
+    axes[0].set_ylabel("mean(det) − mean(random)  [own-site eval]")
+    axes[-1].legend(fontsize=8, loc="upper left")
+    fig.suptitle("Selector sweep: L=6, averaged over disorder realizations and μ_max")
+    fig.tight_layout()
+    savefig(fig, "fig_selector_sweep")
+    print(f"Selector-sweep figure → {os.path.join(FIG_DIR, 'fig_selector_sweep.pdf')}")
+
+
+# ---------------------------------------------------------------------------
+# INHOMOGENEOUS CHAIN EXPERIMENT
+# Fixed (deterministic) asymmetric potential: tests fi ≠ geo regime.
+# ---------------------------------------------------------------------------
+
+def _build_inhomogeneous_mu(L, mu_tilt, pattern="tilt"):
+    """Deterministic asymmetric on-site potential.
+
+    tilt : linear gradient  μ_i = mu_tilt * (2i/(L-1) − 1)
+           range [−mu_tilt, +mu_tilt]; particles accumulate at high-i sites
+    step : step function μ_i = +mu_tilt for i < L//2, −mu_tilt otherwise
+    """
+    if pattern == "tilt":
+        return np.array([mu_tilt * (2.0 * i / (L - 1) - 1.0) for i in range(L)])
+    elif pattern == "step":
+        mu = np.full(L, mu_tilt)
+        mu[L // 2:] = -mu_tilt
+        return mu
+    else:
+        raise ValueError(f"Unknown inhomogeneous pattern: {pattern}")
+
+
+def _inhom_ckpt_path(L, N, J_over_U, mu_tilt, pattern):
+    tag = f"L{L}_N{N}_JU{J_over_U:.4f}_tilt{mu_tilt:.4f}_{pattern}"
+    return os.path.join(CKPT_DIR, f"inhom_{tag}.json")
+
+
+def run_inhomogeneous_experiment(cfg, mu_tilts, patterns, resume=False):
+    """Run causal-handle protocol on deterministic inhomogeneous chains.
+
+    For each (L, J/U, mu_tilt, pattern): single realization, no ensemble averaging.
+    s_fi may differ from s_geo — directly tests variance vs geometry.
+    """
+    results = []
+    seed = cfg["SEED"] + 10
+
+    for L in cfg["L_LIST"]:
+        N = L // 2
+        for ju in cfg["J_OVER_U_LIST"]:
+            for mu_tilt in mu_tilts:
+                for pattern in patterns:
+                    ckpt = _inhom_ckpt_path(L, N, ju, mu_tilt, pattern)
+                    if resume and os.path.exists(ckpt):
+                        with open(ckpt) as f:
+                            res = json.load(f)
+                        results.append((L, N, ju, mu_tilt, pattern, res))
+                        continue
+
+                    mu_vec = _build_inhomogeneous_mu(L, mu_tilt, pattern)
+                    t_seed = _dis_seed(seed, L, ju, int(mu_tilt * 1000), 0, 0)
+                    res    = run_disorder_realization(
+                        L, N, cfg["NMAX"], ju, mu_vec,
+                        cfg["GAMMA_BASE"], cfg["GAMMA_EXTRA"],
+                        cfg["TAU_LIST"], cfg["N_TRIALS"],
+                        cfg["BURN_IN_TIME"], t_seed, cfg.get("N_BOOT", 1000))
+                    save_json(res, ckpt)
+                    overlap = res["overlap"]
+                    print(f"  inhom L={L} J/U={ju:.2f} μ_tilt={mu_tilt:.2f} "
+                          f"{pattern}: s_fi={res['s_fi']} s_geo={res['s_geo']} "
+                          f"overlap={overlap:.2f}")
+                    results.append((L, N, ju, mu_tilt, pattern, res))
+    return results
+
+
+def print_inhomogeneous_summary(results):
+    print("\n=== Inhomogeneous Chain Summary ===\n")
+    for L, N, ju, mu_tilt, pattern, res in results:
+        s_fi  = res["s_fi"]
+        s_geo = res["s_geo"]
+        ovlp  = res["overlap"]
+        print(f"L={L}  J/U={ju:.2f}  μ_tilt={mu_tilt:.2f}  {pattern}:"
+              f"  s_fi={s_fi}  s_geo={s_geo}  overlap={ovlp:.2f}")
+        for tr in res["results"]:
+            tau = tr["tau"]
+            fi  = tr["fi_on_fi_vs_rnd"]
+            geo = tr["geo_on_geo_vs_rnd"]
+            fmg = tr["fi_minus_geo_on_fi"]
+            print(f"  τ={tau:.0f}  fi_vs_rnd={fi['mean']:+.4f}[{fi['ci_lo']:+.4f},{fi['ci_hi']:+.4f}]"
+                  f"  geo_vs_rnd={geo['mean']:+.4f}[{geo['ci_lo']:+.4f},{geo['ci_hi']:+.4f}]"
+                  f"  fi−geo@fi={fmg:+.4f}")
+        print()
+
+
+def make_inhomogeneous_outputs(results):
+    rows = []
+    for L, N, ju, mu_tilt, pattern, res in results:
+        for tr in res["results"]:
+            tau = tr["tau"]
+            rows.append({
+                "L": L, "N": N, "J_over_U": ju,
+                "mu_tilt": mu_tilt, "pattern": pattern,
+                "tau": tau,
+                "s_fi":  str(res["s_fi"]),
+                "s_geo": str(res["s_geo"]),
+                "overlap": res["overlap"],
+                "fi_vs_rnd_mean":  tr["fi_on_fi_vs_rnd"]["mean"],
+                "fi_vs_rnd_ci_lo": tr["fi_on_fi_vs_rnd"]["ci_lo"],
+                "fi_vs_rnd_ci_hi": tr["fi_on_fi_vs_rnd"]["ci_hi"],
+                "geo_vs_rnd_mean": tr["geo_on_geo_vs_rnd"]["mean"],
+                "geo_vs_rnd_ci_lo": tr["geo_on_geo_vs_rnd"]["ci_lo"],
+                "geo_vs_rnd_ci_hi": tr["geo_on_geo_vs_rnd"]["ci_hi"],
+                "fi_minus_geo_on_fi":  tr["fi_minus_geo_on_fi"],
+                "fi_minus_geo_on_geo": tr["fi_minus_geo_on_geo"],
+            })
+    if not rows:
+        print("No inhomogeneous results to write.")
+        return
+    df = pd.DataFrame(rows)
+    csv_path = os.path.join(TAB_DIR, "inhomogeneous_results.csv")
+    df.to_csv(csv_path, index=False)
+    print(f"\nInhomogeneous CSV → {csv_path}")
+
+    # Figure: fi_vs_rnd and geo_vs_rnd vs J/U, one row per pattern
+    tau_ref   = 3.0
+    pat_list  = sorted(df["pattern"].unique())
+    L6        = df[(df["L"] == df["L"].min()) & np.isclose(df["tau"], tau_ref)]
+    if L6.empty:
+        return
+
+    fig, axes = plt.subplots(1, len(pat_list), figsize=(6 * len(pat_list), 5), sharey=True)
+    if len(pat_list) == 1:
+        axes = [axes]
+    for ax, pat in zip(axes, pat_list):
+        sub = L6[L6["pattern"] == pat]
+        for mu_tilt in sorted(sub["mu_tilt"].unique()):
+            sg = sub[np.isclose(sub["mu_tilt"], mu_tilt)].sort_values("J_over_U")
+            ovlp = sg["overlap"].mean()
+            lbl_fi  = f"fi  μ={mu_tilt:.1f} (ovlp={ovlp:.2f})"
+            lbl_geo = f"geo μ={mu_tilt:.1f}"
+            ax.plot(sg["J_over_U"], sg["fi_vs_rnd_mean"],  marker="o",  label=lbl_fi)
+            ax.plot(sg["J_over_U"], sg["geo_vs_rnd_mean"], marker="s",
+                    ls="--", label=lbl_geo)
+        ax.axhline(0, ls="--", color="black", lw=0.7)
+        ax.set_title(f"pattern={pat}, τ={tau_ref:.0f}")
+        ax.set_xlabel("J/U")
+        ax.legend(fontsize=7)
+    axes[0].set_ylabel("selector − random  [own-site eval]")
+    fig.suptitle(f"Inhomogeneous chain: fi vs geo when s_fi ≠ s_geo  (L={df['L'].min()}, τ={tau_ref:.0f})")
+    fig.tight_layout()
+    savefig(fig, "fig_inhomogeneous")
+    print(f"Inhomogeneous figure → {os.path.join(FIG_DIR, 'fig_inhomogeneous.pdf')}")
+
+
+# ---------------------------------------------------------------------------
+# GAMMA-EXTRA SCAN EXPERIMENT
+# Scans γ_extra ∈ {0.1, 0.2, 0.5, 1.0, 2.0} at best condition (J/U=0.40).
+# ---------------------------------------------------------------------------
+
+def _gscan_ckpt_path(L, N, J_over_U, mu_max, gamma_extra, realization):
+    tag = (f"L{L}_N{N}_JU{J_over_U:.4f}_mu{mu_max:.4f}"
+           f"_g{gamma_extra:.3f}_r{realization:03d}")
+    return os.path.join(CKPT_DIR, f"gscan_{tag}.json")
+
+
+def _gscan_worker(args):
+    (L, N, nmax, ju, mu_max, gamma_extra, r,
+     gamma_base, tau_list, n_trials,
+     burn_in_time, dis_seed_base, n_boot) = args
+
+    ckpt = _gscan_ckpt_path(L, N, ju, mu_max, gamma_extra, r)
+    if os.path.exists(ckpt):
+        return None
+
+    dis_ckpt = _dis_ckpt_path(L, N, ju, mu_max, r)
+    if os.path.exists(dis_ckpt):
+        with open(dis_ckpt) as f:
+            mu_vec = np.array(json.load(f)["mu"])
+    else:
+        rng    = np.random.default_rng(_dis_seed(dis_seed_base, L, ju, mu_max, r, 0))
+        mu_vec = rng.uniform(-mu_max, mu_max, size=L)
+
+    t_seed = _dis_seed(dis_seed_base, L, ju, mu_max, r, 4)  # offset 4 = gamma scan
+    res    = run_disorder_realization(
+        L, N, nmax, ju, mu_vec, gamma_base, gamma_extra,
+        tau_list, n_trials, burn_in_time, t_seed, n_boot)
+    res["gamma_extra"] = gamma_extra
+    save_json(res, ckpt)
+    return (L, N, ju, mu_max, gamma_extra, r, res)
+
+
+def run_gamma_scan_experiment(cfg, gamma_extra_list, disorder_strengths,
+                               n_realizations, dis_seed_base,
+                               resume=False, n_workers=1):
+    ckpt_cache, pending = {}, []
+    for L in cfg["L_LIST"]:
+        N = L // 2
+        for ju in cfg["J_OVER_U_LIST"]:
+            for mu_max in disorder_strengths:
+                for gx in gamma_extra_list:
+                    for r in range(n_realizations):
+                        key  = (L, N, ju, mu_max, gx, r)
+                        ckpt = _gscan_ckpt_path(L, N, ju, mu_max, gx, r)
+                        if resume and os.path.exists(ckpt):
+                            with open(ckpt) as f:
+                                ckpt_cache[key] = json.load(f)
+                        else:
+                            pending.append((L, N, cfg["NMAX"], ju, mu_max, gx, r,
+                                            cfg["GAMMA_BASE"], cfg["TAU_LIST"],
+                                            cfg["N_TRIALS"], cfg["BURN_IN_TIME"],
+                                            dis_seed_base, cfg.get("N_BOOT", 1000)))
+
+    n_skip  = len(ckpt_cache)
+    n_total = n_skip + len(pending)
+    print(f"\nGamma-scan realizations: {n_total} total | {n_skip} from checkpoint "
+          f"| {len(pending)} to run | {n_workers} workers\n")
+
+    new_cache = {}
+    if pending:
+        ctx = mp.get_context("spawn")
+        with ctx.Pool(min(n_workers, len(pending)), initializer=_worker_init) as pool:
+            for out in tqdm(pool.imap_unordered(_gscan_worker, pending),
+                            total=len(pending), desc="Gamma-scan realizations",
+                            ncols=90):
+                if out is not None:
+                    L_, N_, ju_, mu_, gx_, r_, res = out
+                    new_cache[(L_, N_, ju_, mu_, gx_, r_)] = res
+
+    all_gs = []
+    for L in cfg["L_LIST"]:
+        N = L // 2
+        for ju in cfg["J_OVER_U_LIST"]:
+            for mu_max in disorder_strengths:
+                for gx in gamma_extra_list:
+                    reals = []
+                    for r in range(n_realizations):
+                        key   = (L, N, ju, mu_max, gx, r)
+                        entry = ckpt_cache.get(key) or new_cache.get(key)
+                        if entry is not None:
+                            reals.append(entry)
+                    all_gs.append({
+                        "L": L, "N": N, "J_over_U": ju,
+                        "mu_max": mu_max, "gamma_extra": gx,
+                        "realizations": reals,
+                    })
+    return all_gs
+
+
+def print_gamma_scan_summary(all_gs):
+    print("\n=== Gamma-Extra Scan Summary ===\n")
+    for cond in all_gs:
+        L, ju  = cond["L"], cond["J_over_U"]
+        mu, gx = cond["mu_max"], cond["gamma_extra"]
+        reals  = cond["realizations"]
+        if not reals:
+            continue
+        print(f"L={L}  J/U={ju:.2f}  μ_max={mu:.2f}  γ_extra={gx:.2f}  n={len(reals)}")
+        for tau_idx, tr in enumerate(reals[0]["results"]):
+            tau  = tr["tau"]
+            vals = [r["results"][tau_idx]["fi_on_fi_vs_rnd"]["mean"] for r in reals]
+            m    = float(np.mean(vals))
+            lo   = float(np.percentile(vals, 2.5))
+            hi   = float(np.percentile(vals, 97.5))
+            print(f"  τ={tau:.0f}  fi_vs_rnd={m:+.4f} [{lo:+.4f},{hi:+.4f}]")
+        print()
+
+
+def make_gamma_scan_outputs(all_gs):
+    rows = []
+    for cond in all_gs:
+        L, ju  = cond["L"], cond["J_over_U"]
+        mu, gx = cond["mu_max"], cond["gamma_extra"]
+        for r_idx, res in enumerate(cond["realizations"]):
+            for tr in res["results"]:
+                tau = tr["tau"]
+                rows.append({
+                    "L": L, "J_over_U": ju, "mu_max": mu,
+                    "gamma_extra": gx, "realization": r_idx, "tau": tau,
+                    "fi_vs_rnd_mean":   tr["fi_on_fi_vs_rnd"]["mean"],
+                    "fi_vs_rnd_ci_lo":  tr["fi_on_fi_vs_rnd"]["ci_lo"],
+                    "fi_vs_rnd_ci_hi":  tr["fi_on_fi_vs_rnd"]["ci_hi"],
+                    "geo_vs_rnd_mean":  tr["geo_on_geo_vs_rnd"]["mean"],
+                    "fi_minus_geo_on_fi":  tr["fi_minus_geo_on_fi"],
+                })
+    if not rows:
+        print("No gamma-scan results to write.")
+        return
+    df = pd.DataFrame(rows)
+    csv_path = os.path.join(TAB_DIR, "gamma_scan_results.csv")
+    df.to_csv(csv_path, index=False)
+    print(f"\nGamma-scan CSV → {csv_path}")
+
+    # Figure: fi_vs_rnd vs γ_extra, one panel per τ
+    L6       = df[df["L"] == df["L"].min()]
+    ju_vals  = sorted(L6["J_over_U"].unique())
+    tau_vals = sorted(L6["tau"].unique())
+    fig, axes = plt.subplots(1, len(tau_vals), figsize=(5 * len(tau_vals), 5), sharey=True)
+    if len(tau_vals) == 1:
+        axes = [axes]
+    cmap = plt.cm.get_cmap("viridis", len(ju_vals))
+    for ax, tau in zip(axes, tau_vals):
+        sub = L6[np.isclose(L6["tau"], tau)]
+        for i, ju in enumerate(ju_vals):
+            sg = sub[(np.isclose(sub["J_over_U"], ju))].groupby("gamma_extra")
+            gx_vals = sorted(sg.groups.keys())
+            means   = [sg.get_group(gx)["fi_vs_rnd_mean"].mean() for gx in gx_vals]
+            ax.plot(gx_vals, means, marker="o", color=cmap(i), label=f"J/U={ju:.2f}")
+        ax.axhline(0, ls="--", color="black", lw=0.7)
+        ax.set_xscale("log")
+        ax.set_title(f"τ = {tau:.0f}")
+        ax.set_xlabel("γ_extra")
+    axes[0].set_ylabel("fi − random  [own-site eval]")
+    axes[-1].legend(fontsize=8)
+    fig.suptitle(f"γ_extra scan: how does intervention strength affect the fi causal signal? (L={L6['L'].iloc[0]})")
+    fig.tight_layout()
+    savefig(fig, "fig_gamma_scan")
+    print(f"Gamma-scan figure → {os.path.join(FIG_DIR, 'fig_gamma_scan.pdf')}")
+
+
+# ---------------------------------------------------------------------------
 # CLI + MAIN
 # ---------------------------------------------------------------------------
 
@@ -1634,6 +2221,21 @@ def parse_args():
     p.add_argument("--shell-perm", action="store_true",
                    help="Run shell-matched permutation kill-test (requires prior "
                         "--disorder checkpoints).")
+    # Selector sweep
+    p.add_argument("--selector-sweep", action="store_true",
+                   help="Run selector sweep experiment (fi, geo, maxn, minn, bdy, anti, gen).")
+    # Inhomogeneous chain
+    p.add_argument("--inhomogeneous", action="store_true",
+                   help="Run inhomogeneous (deterministic asymmetric potential) experiment.")
+    p.add_argument("--inhom-tilts", nargs="+", type=float, default=None,
+                   help="μ_tilt values for inhomogeneous experiment (default: 0.5 1.0 2.0).")
+    p.add_argument("--inhom-patterns", nargs="+", type=str, default=None,
+                   help="Potential patterns: tilt, step (default: tilt step).")
+    # Gamma scan
+    p.add_argument("--gamma-scan", action="store_true",
+                   help="Run γ_extra scan experiment.")
+    p.add_argument("--gamma-scan-values", nargs="+", type=float, default=None,
+                   help="γ_extra values for scan (default: 0.1 0.2 0.5 1.0 2.0).")
     return p.parse_args()
 
 
@@ -1671,10 +2273,11 @@ def main():
 
     save_json(cfg, os.path.join(DATA_DIR, "config.json"))
 
+    dis_strengths = args.disorder_strengths or [0.10, 0.20]
+    dis_seed      = args.disorder_seed or (cfg["SEED"] + 1)
+
     # --- Shell-perm experiment ---
     if args.shell_perm:
-        dis_strengths = args.disorder_strengths or [0.10, 0.20]
-        dis_seed      = args.disorder_seed or (cfg["SEED"] + 1)
         print(f"  Disorder strengths : {dis_strengths}")
         print(f"  Realizations       : {args.disorder_realizations}")
         print(f"  Disorder seed      : {dis_seed}\n")
@@ -1686,10 +2289,8 @@ def main():
         print(f"\nDone. {time.time() - t0:.0f}s")
         return
 
-    # --- Disorder experiment (runs instead of main sweep when --disorder is set) ---
+    # --- Disorder experiment ---
     if args.disorder:
-        dis_strengths = args.disorder_strengths or [0.10, 0.20]
-        dis_seed      = args.disorder_seed or (cfg["SEED"] + 1)
         print(f"  Disorder strengths : {dis_strengths}")
         print(f"  Realizations       : {args.disorder_realizations}")
         print(f"  Disorder seed      : {dis_seed}\n")
@@ -1698,6 +2299,47 @@ def main():
             dis_seed, resume=args.resume, n_workers=args.dis_workers)
         print_disorder_summary(all_dis)
         make_disorder_outputs(all_dis)
+        print(f"\nDone. {time.time() - t0:.0f}s")
+        return
+
+    # --- Selector sweep ---
+    if args.selector_sweep:
+        print(f"  Disorder strengths : {dis_strengths}")
+        print(f"  Realizations       : {args.disorder_realizations}")
+        print(f"  Disorder seed      : {dis_seed}\n")
+        all_sel = run_selector_sweep_experiment(
+            cfg, dis_strengths, args.disorder_realizations,
+            dis_seed, resume=args.resume, n_workers=args.dis_workers)
+        print_selector_sweep_summary(all_sel)
+        make_selector_sweep_outputs(all_sel)
+        print(f"\nDone. {time.time() - t0:.0f}s")
+        return
+
+    # --- Inhomogeneous chain ---
+    if args.inhomogeneous:
+        mu_tilts  = args.inhom_tilts    or [0.5, 1.0, 2.0]
+        patterns  = args.inhom_patterns or ["tilt", "step"]
+        print(f"  μ_tilt values : {mu_tilts}")
+        print(f"  Patterns      : {patterns}\n")
+        all_inhom = run_inhomogeneous_experiment(
+            cfg, mu_tilts, patterns, resume=args.resume)
+        print_inhomogeneous_summary(all_inhom)
+        make_inhomogeneous_outputs(all_inhom)
+        print(f"\nDone. {time.time() - t0:.0f}s")
+        return
+
+    # --- Gamma scan ---
+    if args.gamma_scan:
+        gx_vals = args.gamma_scan_values or [0.1, 0.2, 0.5, 1.0, 2.0]
+        print(f"  γ_extra values     : {gx_vals}")
+        print(f"  Disorder strengths : {dis_strengths}")
+        print(f"  Realizations       : {args.disorder_realizations}")
+        print(f"  Disorder seed      : {dis_seed}\n")
+        all_gs = run_gamma_scan_experiment(
+            cfg, gx_vals, dis_strengths, args.disorder_realizations,
+            dis_seed, resume=args.resume, n_workers=args.dis_workers)
+        print_gamma_scan_summary(all_gs)
+        make_gamma_scan_outputs(all_gs)
         print(f"\nDone. {time.time() - t0:.0f}s")
         return
 
