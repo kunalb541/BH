@@ -1,4 +1,4 @@
-# Targeted Dephasing as a Causal Handle on Local Occupation Loss in an Open Bose–Hubbard Chain
+### Targeted Dephasing as a Causal Handle on Local Occupation Loss in an Open Bose–Hubbard Chain
 
 **Kunal Bhatia** — Independent Researcher, Heidelberg, Germany  
 ORCID: [0009-0007-4447-6325](https://orcid.org/0009-0007-4447-6325)
