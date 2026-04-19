@@ -684,6 +684,10 @@ def parse_args():
                    help="Skip conditions already in outputs/checkpoints/.")
     p.add_argument("--workers", type=int, default=None,
                    help=f"Worker processes (default: {_DEFAULT_WORKERS}).")
+    p.add_argument("--gamma-base", type=float, default=None,
+                   help="Base dephasing rate on all sites (default: 0.1).")
+    p.add_argument("--gamma-extra", type=float, default=None,
+                   help="Extra dephasing added by targeted/random intervention (default: 0.5).")
     p.add_argument("--no-figures", action="store_true",
                    help="Skip figure generation.")
     p.add_argument("--no-tables", action="store_true",
@@ -716,10 +720,12 @@ def main():
         print("  [PILOT MODE] L={6,7}, tau=2, 20 trials\n")
 
     # CLI overrides
-    if args.l_list:   cfg["L_LIST"]        = args.l_list
-    if args.ju_list:  cfg["J_OVER_U_LIST"] = args.ju_list
-    if args.tau_list: cfg["TAU_LIST"]      = args.tau_list
-    if args.trials:   cfg["N_TRIALS"]      = args.trials
+    if args.l_list:      cfg["L_LIST"]        = args.l_list
+    if args.ju_list:     cfg["J_OVER_U_LIST"] = args.ju_list
+    if args.tau_list:    cfg["TAU_LIST"]      = args.tau_list
+    if args.trials:      cfg["N_TRIALS"]      = args.trials
+    if args.gamma_base:  cfg["GAMMA_BASE"]    = args.gamma_base
+    if args.gamma_extra: cfg["GAMMA_EXTRA"]   = args.gamma_extra
 
     save_json(cfg, os.path.join(DATA_DIR, "config.json"))
 
