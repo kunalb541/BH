@@ -786,12 +786,28 @@ def run_disorder_realization(
         occ_geo = _fast_expectations(
             np.real(np.diag(evolve_rho(rho_burn, liouv_geo, tau))), n_diags)
 
-        loss_fi  = float(sum(max(0., occ_before[s] - occ_fi[s])  for s in s_fi))
-        loss_geo = float(sum(max(0., occ_before[s] - occ_geo[s]) for s in s_geo))
+        def _loss_at(occ, sites):
+            return float(sum(max(0., occ_before[s] - occ[s]) for s in sites))
 
-        # Shared random baseline: same draws benchmarked against both arms.
-        diffs_fi_rnd  = np.empty(n_trials)
-        diffs_geo_rnd = np.empty(n_trials)
+        # 2×2 deterministic loss table: (intervention) × (eval set)
+        loss_fi_on_fi   = _loss_at(occ_fi,  s_fi)    # arm-specific (own sites)
+        loss_fi_on_geo  = _loss_at(occ_fi,  s_geo)   # cross-eval
+        loss_geo_on_fi  = _loss_at(occ_geo, s_fi)    # cross-eval
+        loss_geo_on_geo = _loss_at(occ_geo, s_geo)   # arm-specific (own sites)
+
+        # Clean selector comparisons (same eval set, different intervention):
+        #   fi_minus_geo_on_fi  > 0  →  fi intervention produces more loss at fi-sites
+        #   fi_minus_geo_on_geo > 0  →  fi intervention produces more loss at geo-sites
+        # Both positive → variance-specific; both negative → geometry wins; mixed → inconclusive.
+        fi_minus_geo_on_fi  = loss_fi_on_fi  - loss_geo_on_fi
+        fi_minus_geo_on_geo = loss_fi_on_geo - loss_geo_on_geo
+
+        # Random arm evaluated at BOTH reference sets (not at the random sites).
+        # This gives a common baseline so all three arms are compared on equal footing.
+        diffs_fi_on_fi   = np.empty(n_trials)   # fi-interv  vs rnd, eval at fi-sites
+        diffs_geo_on_fi  = np.empty(n_trials)   # geo-interv vs rnd, eval at fi-sites
+        diffs_fi_on_geo  = np.empty(n_trials)   # fi-interv  vs rnd, eval at geo-sites
+        diffs_geo_on_geo = np.empty(n_trials)   # geo-interv vs rnd, eval at geo-sites
 
         it = range(n_trials)
         if verbose:
@@ -803,24 +819,35 @@ def run_disorder_realization(
             op_r    = (_make_additive_op(liouv_base, addons)
                        if sp.issparse(liouv_base)
                        else liouv_base + sum(addons))
-            occ_rnd  = _fast_expectations(
+            occ_rnd = _fast_expectations(
                 np.real(np.diag(evolve_rho(rho_burn, op_r, tau))), n_diags)
-            loss_rnd = float(sum(max(0., occ_before[s] - occ_rnd[s]) for s in rsites))
 
-            diffs_fi_rnd[t]  = loss_fi  - loss_rnd
-            diffs_geo_rnd[t] = loss_geo - loss_rnd
+            rnd_on_fi  = _loss_at(occ_rnd, s_fi)
+            rnd_on_geo = _loss_at(occ_rnd, s_geo)
+
+            diffs_fi_on_fi[t]   = loss_fi_on_fi   - rnd_on_fi
+            diffs_geo_on_fi[t]  = loss_geo_on_fi  - rnd_on_fi
+            diffs_fi_on_geo[t]  = loss_fi_on_geo  - rnd_on_geo
+            diffs_geo_on_geo[t] = loss_geo_on_geo - rnd_on_geo
 
         def _ci(diffs):
             lo, hi = _bootstrap_ci(diffs, n_boot, rng)
             return {"mean": float(np.mean(diffs)), "ci_lo": lo, "ci_hi": hi}
 
         tau_results.append({
-            "tau":          float(tau),
-            "fi_vs_rnd":    _ci(diffs_fi_rnd),
-            "geo_vs_rnd":   _ci(diffs_geo_rnd),
-            "fi_loss":      loss_fi,
-            "geo_loss":     loss_geo,
-            "fi_minus_geo": loss_fi - loss_geo,
+            "tau": float(tau),
+            # --- Primary (clean): same eval set, different intervention ---
+            "fi_on_fi_vs_rnd":   _ci(diffs_fi_on_fi),    # fi beats random at fi-sites?
+            "geo_on_fi_vs_rnd":  _ci(diffs_geo_on_fi),   # geo beats random at fi-sites?
+            "fi_on_geo_vs_rnd":  _ci(diffs_fi_on_geo),   # fi beats random at geo-sites?
+            "geo_on_geo_vs_rnd": _ci(diffs_geo_on_geo),  # geo beats random at geo-sites?
+            "fi_minus_geo_on_fi":  fi_minus_geo_on_fi,   # clean: same fi-sites
+            "fi_minus_geo_on_geo": fi_minus_geo_on_geo,  # clean: same geo-sites
+            # --- Legacy arm-specific (kept for cross-check; confounds intervention+eval) ---
+            "fi_vs_rnd":    _ci(diffs_fi_on_fi),
+            "geo_vs_rnd":   _ci(diffs_geo_on_geo),
+            "fi_loss":      loss_fi_on_fi,
+            "geo_loss":     loss_geo_on_geo,
         })
 
     return {
@@ -886,7 +913,17 @@ def run_disorder_experiment(cfg, disorder_strengths, n_realizations,
 
 
 def print_disorder_summary(all_dis):
-    """Print per-condition aggregate verdict to stdout."""
+    """Print per-condition aggregate verdict to stdout.
+
+    Verdict logic (primary: clean 2×2 — same eval set, different intervention):
+      fi_minus_geo_on_fi  = loss(fi-interv, fi-sites) − loss(geo-interv, fi-sites)
+      fi_minus_geo_on_geo = loss(fi-interv, geo-sites) − loss(geo-interv, geo-sites)
+
+      Both 95% CIs > 0  → VARIANCE-SPECIFIC (fi beats geo regardless of eval set)
+      Both 95% CIs < 0  → GEOMETRY WINS    (geo beats fi regardless of eval set)
+      Mixed signs        → INCONCLUSIVE
+      Neither arm beats random (fi_on_fi and geo_on_geo CIs both ≤ 0) → NULL
+    """
     print("\n=== Disorder Experiment Summary ===")
     for cond in all_dis:
         L, ju, mu_max = cond["L"], cond["J_over_U"], cond["mu_max"]
@@ -898,35 +935,58 @@ def print_disorder_summary(all_dis):
               f"mean_overlap={mean_ovl:.3f}  n_real={len(reals)}")
         tau_vals = [tr["tau"] for tr in reals[0]["results"]]
         for i, tau in enumerate(tau_vals):
-            fi_means  = [r["results"][i]["fi_vs_rnd"]["mean"]  for r in reals]
-            geo_means = [r["results"][i]["geo_vs_rnd"]["mean"] for r in reals]
-            fig_diffs = [r["results"][i]["fi_minus_geo"]       for r in reals]
-            rng_agg   = np.random.default_rng(99)
-            fi_lo,  fi_hi  = _bootstrap_ci(np.array(fi_means),  1000, rng_agg)
-            geo_lo, geo_hi = _bootstrap_ci(np.array(geo_means), 1000, rng_agg)
-            fg_lo,  fg_hi  = _bootstrap_ci(np.array(fig_diffs), 1000, rng_agg)
-            fi_tag  = "PASS" if fi_lo  > 0 else ("FAIL" if fi_hi  < 0 else "ZERO")
-            geo_tag = "PASS" if geo_lo > 0 else ("FAIL" if geo_hi < 0 else "ZERO")
-            if fi_lo > 0 and geo_lo <= 0:
-                verdict = "VARIANCE-SPECIFIC"
-            elif fi_lo > 0 and geo_lo > 0 and fg_lo > 0:
-                verdict = "FI>GEO (variance adds)"
-            elif fi_lo > 0 and geo_lo > 0:
-                verdict = "SELECTOR-CLASS (fi≈geo, both beat rnd)"
-            elif fi_lo <= 0 and geo_lo <= 0:
+            rng_agg = np.random.default_rng(99)
+
+            # --- clean 2×2: fi_minus_geo at each eval set ---
+            fg_fi_vals  = [r["results"][i]["fi_minus_geo_on_fi"]  for r in reals]
+            fg_geo_vals = [r["results"][i]["fi_minus_geo_on_geo"] for r in reals]
+            fg_fi_lo,  fg_fi_hi  = _bootstrap_ci(np.array(fg_fi_vals),  1000, rng_agg)
+            fg_geo_lo, fg_geo_hi = _bootstrap_ci(np.array(fg_geo_vals), 1000, rng_agg)
+
+            # --- arm-vs-random at own sites (for null check) ---
+            fi_fi_means   = [r["results"][i]["fi_on_fi_vs_rnd"]["mean"]   for r in reals]
+            geo_geo_means = [r["results"][i]["geo_on_geo_vs_rnd"]["mean"] for r in reals]
+            fi_fi_lo,  fi_fi_hi   = _bootstrap_ci(np.array(fi_fi_means),   1000, rng_agg)
+            geo_geo_lo, geo_geo_hi = _bootstrap_ci(np.array(geo_geo_means), 1000, rng_agg)
+
+            # verdict
+            fi_beats_geo_at_fi  = fg_fi_lo  > 0
+            fi_beats_geo_at_geo = fg_geo_lo > 0
+            geo_beats_fi_at_fi  = fg_fi_hi  < 0
+            geo_beats_fi_at_geo = fg_geo_hi < 0
+            if fi_fi_lo <= 0 and geo_geo_lo <= 0:
                 verdict = "NULL (neither beats rnd)"
+            elif fi_beats_geo_at_fi and fi_beats_geo_at_geo:
+                verdict = "VARIANCE-SPECIFIC"
+            elif geo_beats_fi_at_fi and geo_beats_fi_at_geo:
+                verdict = "GEOMETRY WINS"
+            elif (fi_beats_geo_at_fi or fi_beats_geo_at_geo) and not (
+                    geo_beats_fi_at_fi or geo_beats_fi_at_geo):
+                verdict = "FI>GEO (one eval set)"
+            elif (geo_beats_fi_at_fi or geo_beats_fi_at_geo) and not (
+                    fi_beats_geo_at_fi or fi_beats_geo_at_geo):
+                verdict = "GEO>FI (one eval set)"
             else:
-                verdict = "INCONCLUSIVE"
-            print(f"  τ={tau:.0f}  fi_vs_rnd={np.mean(fi_means):.4f} "
-                  f"[{fi_lo:.4f},{fi_hi:.4f}] {fi_tag}"
-                  f"  geo_vs_rnd={np.mean(geo_means):.4f} "
-                  f"[{geo_lo:.4f},{geo_hi:.4f}] {geo_tag}"
-                  f"  fi-geo={np.mean(fig_diffs):.4f} [{fg_lo:.4f},{fg_hi:.4f}]"
-                  f"  → {verdict}")
+                verdict = "SELECTOR-CLASS (fi≈geo)"
+
+            print(
+                f"  τ={tau:.0f}"
+                f"  fg@fi={np.mean(fg_fi_vals):+.4f} [{fg_fi_lo:+.4f},{fg_fi_hi:+.4f}]"
+                f"  fg@geo={np.mean(fg_geo_vals):+.4f} [{fg_geo_lo:+.4f},{fg_geo_hi:+.4f}]"
+                f"  fi@fi={np.mean(fi_fi_means):+.4f} [{fi_fi_lo:+.4f},{fi_fi_hi:+.4f}]"
+                f"  geo@geo={np.mean(geo_geo_means):+.4f} [{geo_geo_lo:+.4f},{geo_geo_hi:+.4f}]"
+                f"  → {verdict}"
+            )
 
 
 def make_disorder_outputs(all_dis):
-    """Write CSV and figure for the disorder identifiability experiment."""
+    """Write CSV and figure for the disorder identifiability experiment.
+
+    Primary metric: fi_minus_geo aggregated across realizations at BOTH eval sets.
+      fg_fi_mean  = mean over realizations of (loss_fi@fi − loss_geo@fi)
+      fg_geo_mean = mean over realizations of (loss_fi@geo − loss_geo@geo)
+    Positive → fi intervention produces more loss than geo at that eval set.
+    """
     rows = []
     for cond in all_dis:
         L, ju, mu_max = cond["L"], cond["J_over_U"], cond["mu_max"]
@@ -936,20 +996,38 @@ def make_disorder_outputs(all_dis):
         overlaps = [r["overlap"] for r in reals]
         tau_vals = [tr["tau"] for tr in reals[0]["results"]]
         for i, tau in enumerate(tau_vals):
-            fi_means  = [r["results"][i]["fi_vs_rnd"]["mean"]  for r in reals]
-            geo_means = [r["results"][i]["geo_vs_rnd"]["mean"] for r in reals]
-            fig_diffs = [r["results"][i]["fi_minus_geo"]       for r in reals]
+            # --- clean 2×2 ---
+            fg_fi_vals    = [r["results"][i]["fi_minus_geo_on_fi"]  for r in reals]
+            fg_geo_vals   = [r["results"][i]["fi_minus_geo_on_geo"] for r in reals]
+            # --- arm vs random at own sites (for reference) ---
+            fi_fi_means   = [r["results"][i]["fi_on_fi_vs_rnd"]["mean"]   for r in reals]
+            fi_fi_lo_vals = [r["results"][i]["fi_on_fi_vs_rnd"]["ci_lo"]  for r in reals]
+            fi_fi_hi_vals = [r["results"][i]["fi_on_fi_vs_rnd"]["ci_hi"]  for r in reals]
+            gg_means      = [r["results"][i]["geo_on_geo_vs_rnd"]["mean"] for r in reals]
+            gg_lo_vals    = [r["results"][i]["geo_on_geo_vs_rnd"]["ci_lo"]for r in reals]
+            gg_hi_vals    = [r["results"][i]["geo_on_geo_vs_rnd"]["ci_hi"]for r in reals]
+            # cross-eval arm vs random
+            fi_geo_means  = [r["results"][i]["fi_on_geo_vs_rnd"]["mean"]  for r in reals]
+            geo_fi_means  = [r["results"][i]["geo_on_fi_vs_rnd"]["mean"]  for r in reals]
+
             rows.append({
                 "L": L, "J_over_U": ju, "mu_max": mu_max, "tau": tau,
-                "mean_overlap":  float(np.mean(overlaps)),
-                "std_overlap":   float(np.std(overlaps)),
-                "fi_rnd_mean":   float(np.mean(fi_means)),
-                "fi_rnd_std":    float(np.std(fi_means)),
-                "geo_rnd_mean":  float(np.mean(geo_means)),
-                "geo_rnd_std":   float(np.std(geo_means)),
-                "fi_geo_mean":   float(np.mean(fig_diffs)),
-                "fi_geo_std":    float(np.std(fig_diffs)),
-                "n_real":        len(reals),
+                "n_real":           len(reals),
+                "mean_overlap":     float(np.mean(overlaps)),
+                "std_overlap":      float(np.std(overlaps)),
+                # primary 2×2: fi_minus_geo at each eval set
+                "fg_fi_mean":       float(np.mean(fg_fi_vals)),
+                "fg_fi_std":        float(np.std(fg_fi_vals)),
+                "fg_geo_mean":      float(np.mean(fg_geo_vals)),
+                "fg_geo_std":       float(np.std(fg_geo_vals)),
+                # arm vs rnd at own sites
+                "fi_fi_rnd_mean":   float(np.mean(fi_fi_means)),
+                "fi_fi_rnd_std":    float(np.std(fi_fi_means)),
+                "geo_geo_rnd_mean": float(np.mean(gg_means)),
+                "geo_geo_rnd_std":  float(np.std(gg_means)),
+                # cross-eval arm vs rnd (for full 2×2 CSV)
+                "fi_geo_rnd_mean":  float(np.mean(fi_geo_means)),
+                "geo_fi_rnd_mean":  float(np.mean(geo_fi_means)),
             })
 
     if not rows:
@@ -961,51 +1039,63 @@ def make_disorder_outputs(all_dis):
     df.to_csv(csv_path, index=False)
     print(f"\nDisorder CSV → {csv_path}")
 
-    # Figure: fi-vs-rnd and geo-vs-rnd grouped by disorder strength
-    tau_vals  = sorted(df["tau"].unique())
-    mu_vals   = sorted(df["mu_max"].unique())
-    n_tau     = len(tau_vals)
+    # -----------------------------------------------------------------------
+    # Figure: fi_minus_geo at fi-sites (top row) and geo-sites (bottom row),
+    #         one column per τ, bars grouped by disorder strength.
+    # -----------------------------------------------------------------------
+    tau_vals = sorted(df["tau"].unique())
+    mu_vals  = sorted(df["mu_max"].unique())
+    n_tau    = len(tau_vals)
+    x        = np.arange(len(mu_vals))
+    w        = 0.38
 
-    fig, axes = plt.subplots(1, n_tau, figsize=(5 * n_tau, 5), sharey=True)
+    fig, axes = plt.subplots(2, n_tau,
+                              figsize=(4.5 * n_tau, 8),
+                              sharey="row", sharex="col")
     if n_tau == 1:
-        axes = [axes]
+        axes = axes.reshape(2, 1)
 
-    for ax, tau in zip(axes, tau_vals):
+    row_labels = ["eval at fi-sites", "eval at geo-sites"]
+    col_keys   = ["fg_fi",            "fg_geo"]
+
+    for col, tau in enumerate(tau_vals):
         sub = df[abs(df["tau"] - tau) < 0.01]
-        x = np.arange(len(mu_vals))
-        w = 0.32
-        for offset, (arm, col, lbl) in enumerate(
-                [("fi",  "C0", "fi vs rnd"),
-                 ("geo", "C1", "geo vs rnd")]):
-            y   = [sub[abs(sub["mu_max"] - m) < 1e-9][f"{arm}_rnd_mean"].mean()
+        for row, (key, rlbl) in enumerate(zip(col_keys, row_labels)):
+            ax = axes[row, col]
+            y   = [sub[abs(sub["mu_max"] - m) < 1e-9][f"{key}_mean"].mean()
                    for m in mu_vals]
-            err = [sub[abs(sub["mu_max"] - m) < 1e-9][f"{arm}_rnd_std"].mean()
+            err = [sub[abs(sub["mu_max"] - m) < 1e-9][f"{key}_std"].mean()
                    for m in mu_vals]
-            ax.bar(x + (offset - 0.5) * w, y, w, yerr=err, capsize=4,
-                   label=lbl, color=col, alpha=0.82, ecolor="black", error_kw={"lw": 1})
-        ax.axhline(0, color="gray", lw=0.7, ls=":")
-        ax.set_xticks(x)
-        ax.set_xticklabels([f"μ={m:.2f}" for m in mu_vals])
-        ax.set_xlabel("Disorder strength μ_max")
-        ax.set_title(f"τ = {tau:.0f}")
-        ax.legend(fontsize=9)
+            colors = ["C2" if v > 0 else "C3" for v in y]
+            ax.bar(x, y, w, yerr=err, capsize=5,
+                   color=colors, alpha=0.82, ecolor="black",
+                   error_kw={"lw": 1.2})
+            ax.axhline(0, color="gray", lw=0.8, ls="--")
+            ax.set_xticks(x)
+            ax.set_xticklabels([f"μ={m:.2f}" for m in mu_vals])
+            if col == 0:
+                ax.set_ylabel(f"fi−geo loss diff\n({rlbl})")
+            if row == 0:
+                ax.set_title(f"τ = {tau:.0f}", fontsize=11)
+            if row == 1:
+                ax.set_xlabel("Disorder strength μ_max")
 
-    axes[0].set_ylabel("Mean loss diff vs random (across realizations)")
-
-    # Inset on last panel: mean selector overlap vs disorder strength
-    ax_ovl = axes[-1].inset_axes([0.55, 0.55, 0.42, 0.38])
+    # Inset on axes[0, -1]: mean selector overlap vs disorder strength
+    ax_ovl = axes[0, -1].inset_axes([0.55, 0.55, 0.42, 0.38])
     ovl_by_mu = (df.groupby("mu_max")["mean_overlap"].mean()
                    .reindex(sorted(df["mu_max"].unique())))
     ax_ovl.plot(ovl_by_mu.index, ovl_by_mu.values, "k-o", ms=5, lw=1.5)
     ax_ovl.set_ylim(-0.05, 1.1)
+    ax_ovl.axhline(1.0, color="gray", lw=0.7, ls=":")
     ax_ovl.set_xlabel("μ_max", fontsize=8)
     ax_ovl.set_ylabel("overlap", fontsize=8)
     ax_ovl.set_title("Selector overlap", fontsize=8)
     ax_ovl.tick_params(labelsize=7)
 
     fig.suptitle(
-        "Disorder identifiability: fi-selector vs geo-selector vs random",
-        fontsize=11, y=1.01)
+        "Disorder identifiability: fi-selector vs geo-selector\n"
+        "(green = fi beats geo, red = geo beats fi)",
+        fontsize=11)
     fig.tight_layout()
     savefig(fig, "fig_disorder")
     print(f"Disorder figure → {os.path.join(FIG_DIR, 'fig_disorder.pdf')}")
