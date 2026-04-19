@@ -739,6 +739,33 @@ def _dis_seed(base, L, ju, mu_max, r, offset):
     return int(hashlib.sha256(key.encode()).hexdigest()[:8], 16)
 
 
+def _sp_ckpt_path(L, N, J_over_U, mu_max, realization):
+    tag = f"L{L}_N{N}_JU{J_over_U:.4f}_mu{mu_max:.4f}_r{realization:03d}"
+    return os.path.join(CKPT_DIR, f"sp_{tag}.json")
+
+
+def _enumerate_shell_perms(L):
+    """Enumerate all 2^n_binary_shells within-shell permutations for a 1D chain.
+
+    Shell index = min(i, L-1-i).  Only shells with exactly 2 sites can be
+    independently swapped.  Returns a list of length-L integer arrays p such
+    that permuted_F = Fi[p].  Index 0 is always the identity permutation.
+    """
+    shells = {}
+    for i in range(L):
+        shells.setdefault(min(i, L - 1 - i), []).append(i)
+    swappable = [sites for _, sites in sorted(shells.items()) if len(sites) == 2]
+
+    perms = []
+    for bits in range(1 << len(swappable)):
+        perm = np.arange(L)
+        for bit_idx, (s0, s1) in enumerate(swappable):
+            if (bits >> bit_idx) & 1:
+                perm[s0], perm[s1] = s1, s0
+        perms.append(perm)
+    return perms   # length 2^len(swappable); perms[0] = identity
+
+
 def run_disorder_realization(
         L, N, nmax, J_over_U, mu_vec,
         gamma_base, gamma_extra,
@@ -1145,6 +1172,424 @@ def make_disorder_outputs(all_dis):
 
 
 # ---------------------------------------------------------------------------
+# Shell-matched permutation experiment
+# ---------------------------------------------------------------------------
+
+def run_shell_perm_realization(
+        L, N, nmax, J_over_U, mu_vec,
+        gamma_base, gamma_extra,
+        tau_list, n_trials, burn_in_time,
+        trial_seed, n_boot=1000):
+    """Shell-matched permutation test for one disorder realization.
+
+    Extends the disorder realization by enumerating all 2^n_shell_pairs
+    within-shell permutations of F_i.  For each permutation the top-k
+    selector is re-computed; effects are averaged over all permutations.
+
+    Adds a generator-action selector (s_gen) as a third arm:
+      gen_actions[i] = |d⟨n_i⟩/dt|_H| = |Tr(n_i (-i)[H,ρ_burn])|
+    Sites with higher |gen_action| are more dynamically active under
+    Hamiltonian tunneling at the post-burn-in state.
+
+    Key metrics (per τ):
+      fi_minus_sp_on_fi   : loss(fi_interv, fi_sites) − mean_perm[loss(perm_interv, fi_sites)]
+      fi_minus_sp_on_geo  : loss(fi_interv, geo_sites) − mean_perm[loss(perm_interv, geo_sites)]
+      fi_minus_geo_on_fi  : same as disorder experiment (reference)
+      gen_minus_geo_on_geo: loss(gen_interv, geo_sites) − loss(geo_interv, geo_sites)
+    """
+    U = 1.0
+    J = J_over_U * U
+
+    basis    = build_basis(L, N, nmax)
+    idx_map  = basis_index(basis)
+    D        = len(basis)
+    k        = max(1, int(np.ceil(L / 3)))
+
+    H        = build_hamiltonian(L, J, U, nmax, basis, idx_map, mu=mu_vec)
+    n_ops    = [number_op(i, D, basis) for i in range(L)]
+    n_diags  = np.array([np.diag(op) for op in n_ops], dtype=np.float64)
+    n2_diags = n_diags ** 2
+
+    liouv_base       = build_liouvillian(H, n_ops, [gamma_base] * L)
+    site_diss_scaled = [gamma_extra * _make_site_dissipator(n_ops[i], D)
+                        for i in range(L)]
+
+    eigvals, eigvecs = np.linalg.eigh(H)
+    psi0      = eigvecs[:, 0]
+    rho_burn  = evolve_rho(np.outer(psi0, psi0.conj()), liouv_base, burn_in_time)
+    rho_bd    = np.real(np.diag(rho_burn))
+
+    Fi      = _fast_variances(rho_bd, n_diags, n2_diags)
+    s_fi    = sorted(np.argsort(Fi)[-k:].tolist())
+    s_geo   = geo_central_sites(L, k)
+
+    # Generator-action selector: rate of occupation change under H at burn-in state
+    comm_diag    = np.diag(H @ rho_burn - rho_burn @ H)  # purely imaginary
+    gen_actions  = np.array([float(np.real(-1j * np.dot(n_diags[i], comm_diag)))
+                              for i in range(L)])
+    s_gen        = sorted(np.argsort(np.abs(gen_actions))[-k:].tolist())
+
+    # Shell permutations
+    all_perms  = _enumerate_shell_perms(L)
+    perm_sels  = [sorted(np.argsort(Fi[p])[-k:].tolist()) for p in all_perms]
+    unique_sp  = list({tuple(s) for s in perm_sels})
+
+    def _det_liouv(sites):
+        op = liouv_base + sum(site_diss_scaled[s] for s in sites)
+        return op.tocsr() if sp.issparse(op) else op
+
+    liouv_fi  = _det_liouv(s_fi)
+    liouv_geo = _det_liouv(s_geo)
+    liouv_gen = _det_liouv(s_gen)
+    liouv_sp  = {sites: _det_liouv(list(sites)) for sites in unique_sp}
+
+    occ_before = _fast_expectations(rho_bd, n_diags)
+    rng        = np.random.default_rng(trial_seed)
+
+    def _loss_at(occ, sites):
+        return float(sum(max(0., occ_before[s] - occ[s]) for s in sites))
+
+    tau_results = []
+
+    for tau in tau_list:
+        occ_fi  = _fast_expectations(
+            np.real(np.diag(evolve_rho(rho_burn, liouv_fi,  tau))), n_diags)
+        occ_geo = _fast_expectations(
+            np.real(np.diag(evolve_rho(rho_burn, liouv_geo, tau))), n_diags)
+        occ_gen = _fast_expectations(
+            np.real(np.diag(evolve_rho(rho_burn, liouv_gen, tau))), n_diags)
+
+        occ_sp_cache = {sites: _fast_expectations(
+            np.real(np.diag(evolve_rho(rho_burn, liouv_sp[sites], tau))), n_diags)
+            for sites in unique_sp}
+
+        loss_fi_on_fi    = _loss_at(occ_fi,  s_fi)
+        loss_fi_on_geo   = _loss_at(occ_fi,  s_geo)
+        loss_geo_on_fi   = _loss_at(occ_geo, s_fi)
+        loss_geo_on_geo  = _loss_at(occ_geo, s_geo)
+        loss_gen_on_geo  = _loss_at(occ_gen, s_geo)
+        loss_gen_on_fi   = _loss_at(occ_gen, s_fi)
+
+        sp_on_fi_vals  = [_loss_at(occ_sp_cache[tuple(s)], s_fi)  for s in perm_sels]
+        sp_on_geo_vals = [_loss_at(occ_sp_cache[tuple(s)], s_geo) for s in perm_sels]
+        sp_on_fi  = float(np.mean(sp_on_fi_vals))
+        sp_on_geo = float(np.mean(sp_on_geo_vals))
+
+        fi_minus_sp_on_fi   = loss_fi_on_fi   - sp_on_fi
+        fi_minus_sp_on_geo  = loss_fi_on_geo  - sp_on_geo
+        fi_minus_geo_on_fi  = loss_fi_on_fi   - loss_geo_on_fi
+        fi_minus_geo_on_geo = loss_fi_on_geo  - loss_geo_on_geo
+        gen_minus_geo_on_geo = loss_gen_on_geo - loss_geo_on_geo
+        gen_minus_geo_on_fi  = loss_gen_on_fi  - loss_geo_on_fi
+
+        # Shared random baseline at fi-sites and geo-sites
+        diffs_fi_on_fi    = np.empty(n_trials)
+        diffs_sp_on_fi    = np.empty(n_trials)
+        diffs_geo_on_geo  = np.empty(n_trials)
+        diffs_fi_on_geo   = np.empty(n_trials)
+        diffs_sp_on_geo   = np.empty(n_trials)
+        diffs_gen_on_geo  = np.empty(n_trials)
+        diffs_gen_on_fi   = np.empty(n_trials)
+
+        for t in range(n_trials):
+            rsites  = rng.choice(L, size=k, replace=False).tolist()
+            addons  = [site_diss_scaled[s] for s in rsites]
+            op_r    = (_make_additive_op(liouv_base, addons)
+                       if sp.issparse(liouv_base)
+                       else liouv_base + sum(addons))
+            occ_rnd = _fast_expectations(
+                np.real(np.diag(evolve_rho(rho_burn, op_r, tau))), n_diags)
+
+            rnd_fi  = _loss_at(occ_rnd, s_fi)
+            rnd_geo = _loss_at(occ_rnd, s_geo)
+
+            diffs_fi_on_fi[t]   = loss_fi_on_fi   - rnd_fi
+            diffs_sp_on_fi[t]   = sp_on_fi         - rnd_fi
+            diffs_geo_on_geo[t] = loss_geo_on_geo  - rnd_geo
+            diffs_fi_on_geo[t]  = loss_fi_on_geo   - rnd_geo
+            diffs_sp_on_geo[t]  = sp_on_geo         - rnd_geo
+            diffs_gen_on_geo[t] = loss_gen_on_geo  - rnd_geo
+            diffs_gen_on_fi[t]  = loss_gen_on_fi   - rnd_fi
+
+        def _ci(diffs):
+            lo, hi = _bootstrap_ci(diffs, n_boot, rng)
+            return {"mean": float(np.mean(diffs)), "ci_lo": lo, "ci_hi": hi}
+
+        tau_results.append({
+            "tau": float(tau),
+            # Primary: shell-perm kill-test (same eval set, different intervention)
+            "fi_minus_sp_on_fi":    fi_minus_sp_on_fi,
+            "fi_minus_sp_on_geo":   fi_minus_sp_on_geo,
+            # Reference: fi vs geo (same as disorder experiment)
+            "fi_minus_geo_on_fi":   fi_minus_geo_on_fi,
+            "fi_minus_geo_on_geo":  fi_minus_geo_on_geo,
+            # Generator-action arm vs geo
+            "gen_minus_geo_on_geo": gen_minus_geo_on_geo,
+            "gen_minus_geo_on_fi":  gen_minus_geo_on_fi,
+            # vs random
+            "fi_on_fi_vs_rnd":    _ci(diffs_fi_on_fi),
+            "sp_on_fi_vs_rnd":    _ci(diffs_sp_on_fi),
+            "fi_on_geo_vs_rnd":   _ci(diffs_fi_on_geo),
+            "sp_on_geo_vs_rnd":   _ci(diffs_sp_on_geo),
+            "geo_on_geo_vs_rnd":  _ci(diffs_geo_on_geo),
+            "gen_on_geo_vs_rnd":  _ci(diffs_gen_on_geo),
+            "gen_on_fi_vs_rnd":   _ci(diffs_gen_on_fi),
+            # bookkeeping
+            "n_shell_perms":      len(all_perms),
+            "n_unique_sp_sel":    len(unique_sp),
+        })
+
+    return {
+        "L": L, "N": N, "J_over_U": J_over_U, "D": D, "k": k,
+        "mu": mu_vec.tolist(), "s_fi": s_fi, "s_geo": s_geo, "s_gen": s_gen,
+        "Fi": Fi.tolist(), "gen_actions": gen_actions.tolist(),
+        "gen_actions_abs": np.abs(gen_actions).tolist(),
+        "n_shell_perms": len(all_perms),
+        "results": tau_results,
+    }
+
+
+def _shell_perm_worker(args):
+    """Spawn-safe worker: run one shell-perm realization and checkpoint it."""
+    (L, N, nmax, ju, mu_max, r,
+     gamma_base, gamma_extra, tau_list, n_trials,
+     burn_in_time, dis_seed_base, n_boot) = args
+
+    # Reuse mu_vec from existing disorder checkpoint (ensures same realization)
+    dis_ckpt = _dis_ckpt_path(L, N, ju, mu_max, r)
+    if os.path.exists(dis_ckpt):
+        with open(dis_ckpt) as f:
+            mu_vec = np.array(json.load(f)["mu"])
+    else:
+        dis_rng = np.random.default_rng(_dis_seed(dis_seed_base, L, ju, mu_max, r, 0))
+        mu_vec  = dis_rng.uniform(-mu_max, mu_max, size=L)
+
+    t_seed = _dis_seed(dis_seed_base, L, ju, mu_max, r, 2)  # offset 2 = shell-perm
+
+    res = run_shell_perm_realization(
+        L, N, nmax, ju, mu_vec,
+        gamma_base, gamma_extra,
+        tau_list, n_trials,
+        burn_in_time, t_seed,
+        n_boot=n_boot,
+    )
+    res["mu_max"] = float(mu_max)
+    res["realization"] = r
+    save_json(res, _sp_ckpt_path(L, N, ju, mu_max, r))
+    return (L, N, ju, mu_max, r, res)
+
+
+def run_shell_perm_experiment(cfg, disorder_strengths, n_realizations,
+                               dis_seed_base, resume=False, n_workers=1):
+    """Shell-matched permutation experiment: sweep (L, J/U, μ_max) × realization."""
+    ckpt_cache   = {}
+    pending_args = []
+
+    for L in cfg["L_LIST"]:
+        N = L // 2
+        for ju in cfg["J_OVER_U_LIST"]:
+            for mu_max in disorder_strengths:
+                for r in range(n_realizations):
+                    key  = (L, N, ju, mu_max, r)
+                    ckpt = _sp_ckpt_path(L, N, ju, mu_max, r)
+                    if resume and os.path.exists(ckpt):
+                        with open(ckpt) as f:
+                            ckpt_cache[key] = json.load(f)
+                    else:
+                        pending_args.append((
+                            L, N, cfg["NMAX"], ju, mu_max, r,
+                            cfg["GAMMA_BASE"], cfg["GAMMA_EXTRA"],
+                            cfg["TAU_LIST"], cfg["N_TRIALS"],
+                            cfg["BURN_IN_TIME"], dis_seed_base,
+                            cfg.get("N_BOOT", 1000),
+                        ))
+
+    n_skip  = len(ckpt_cache)
+    n_total = n_skip + len(pending_args)
+    print(f"\nShell-perm realizations: {n_total} total | {n_skip} from checkpoint "
+          f"| {len(pending_args)} to run | {n_workers} workers\n")
+
+    new_cache = {}
+    if pending_args:
+        n_w = min(n_workers, len(pending_args))
+        ctx = mp.get_context("spawn")
+        with ctx.Pool(n_w, initializer=_worker_init) as pool:
+            for L_, N_, ju_, mu_max_, r_, res in tqdm(
+                    pool.imap_unordered(_shell_perm_worker, pending_args),
+                    total=len(pending_args), desc="Shell-perm realizations", ncols=80):
+                new_cache[(L_, N_, ju_, mu_max_, r_)] = res
+
+    all_sp = []
+    for L in cfg["L_LIST"]:
+        N = L // 2
+        for ju in cfg["J_OVER_U_LIST"]:
+            for mu_max in disorder_strengths:
+                reals = []
+                for r in range(n_realizations):
+                    key   = (L, N, ju, mu_max, r)
+                    entry = ckpt_cache.get(key) or new_cache.get(key)
+                    if entry is not None:
+                        reals.append(entry)
+                all_sp.append({
+                    "L": L, "N": N, "J_over_U": ju,
+                    "mu_max": mu_max,
+                    "realizations": reals,
+                })
+    return all_sp
+
+
+def print_shell_perm_summary(all_sp):
+    """Print per-condition shell-perm verdict.
+
+    Key gaps reported:
+      fi−sp@fi  : real fi minus shell-perm fi at fi-sites  (within-shell kill-test)
+      fi−sp@geo : real fi minus shell-perm fi at geo-sites
+      gen−geo@geo: generator-action minus geo at geo-sites
+    Verdict:
+      fi > sp  : variance has within-shell content
+      fi ≈ sp  : within-shell null — geometry carries the effect
+      gen > geo: generator-action selector beats pure geometry
+    """
+    print("\n=== Shell-Perm Experiment Summary ===\n")
+    for cond in all_sp:
+        L, ju, mu_max = cond["L"], cond["J_over_U"], cond["mu_max"]
+        reals = cond["realizations"]
+        if not reals:
+            continue
+        n_sp = reals[0].get("n_shell_perms", "?")
+        tau_vals = [tr["tau"] for tr in reals[0]["results"]]
+        print(f"L={L}  J/U={ju:.2f}  μ_max={mu_max:.2f}  n_perms={n_sp}  n_real={len(reals)}")
+        for i, tau in enumerate(tau_vals):
+            rng_agg = np.random.default_rng(42)
+            # Shell-perm kill-test
+            sp_fi_vals  = [r["results"][i]["fi_minus_sp_on_fi"]  for r in reals]
+            sp_geo_vals = [r["results"][i]["fi_minus_sp_on_geo"] for r in reals]
+            sp_fi_lo,  sp_fi_hi  = _bootstrap_ci(np.array(sp_fi_vals),  1000, rng_agg)
+            sp_geo_lo, sp_geo_hi = _bootstrap_ci(np.array(sp_geo_vals), 1000, rng_agg)
+            # Generator-action vs geo
+            gn_fi_vals  = [r["results"][i]["gen_minus_geo_on_fi"]  for r in reals]
+            gn_geo_vals = [r["results"][i]["gen_minus_geo_on_geo"] for r in reals]
+            gn_fi_lo,  gn_fi_hi  = _bootstrap_ci(np.array(gn_fi_vals),  1000, rng_agg)
+            gn_geo_lo, gn_geo_hi = _bootstrap_ci(np.array(gn_geo_vals), 1000, rng_agg)
+            # Verdict for shell-perm kill-test
+            fi_beats_sp_fi  = sp_fi_lo  > 0
+            fi_beats_sp_geo = sp_geo_lo > 0
+            sp_beats_fi_fi  = sp_fi_hi  < 0
+            sp_beats_fi_geo = sp_geo_hi < 0
+            if fi_beats_sp_fi and fi_beats_sp_geo:
+                sp_verdict = "FI>SP (within-shell content)"
+            elif sp_beats_fi_fi and sp_beats_fi_geo:
+                sp_verdict = "SP>FI (shell-perm beats fi?)"
+            elif fi_beats_sp_fi or fi_beats_sp_geo:
+                sp_verdict = "FI>SP (one eval set)"
+            elif sp_beats_fi_fi or sp_beats_fi_geo:
+                sp_verdict = "SP>FI (one eval set)"
+            else:
+                sp_verdict = "fi≈sp (within-shell null)"
+            # Verdict for gen vs geo
+            if gn_geo_lo > 0 and gn_fi_lo > 0:
+                gen_verdict = "GEN>GEO (both)"
+            elif gn_geo_lo > 0 or gn_fi_lo > 0:
+                gen_verdict = "GEN>GEO (one)"
+            elif gn_geo_hi < 0 and gn_fi_hi < 0:
+                gen_verdict = "GEO>GEN (both)"
+            else:
+                gen_verdict = "gen≈geo"
+            print(f"  τ={tau:.0f}  fi−sp@fi={np.mean(sp_fi_vals):+.4f} [{sp_fi_lo:+.4f},{sp_fi_hi:+.4f}]"
+                  f"  fi−sp@geo={np.mean(sp_geo_vals):+.4f} [{sp_geo_lo:+.4f},{sp_geo_hi:+.4f}]"
+                  f"  gen−geo@geo={np.mean(gn_geo_vals):+.4f} [{gn_geo_lo:+.4f},{gn_geo_hi:+.4f}]"
+                  f"  → {sp_verdict} | {gen_verdict}")
+
+
+def make_shell_perm_outputs(all_sp):
+    """Write CSV and figure for the shell-perm experiment."""
+    rows = []
+    for cond in all_sp:
+        L, ju, mu_max = cond["L"], cond["J_over_U"], cond["mu_max"]
+        reals = cond["realizations"]
+        if not reals:
+            continue
+        tau_vals = [tr["tau"] for tr in reals[0]["results"]]
+        for i, tau in enumerate(tau_vals):
+            sp_fi_vals   = [r["results"][i]["fi_minus_sp_on_fi"]   for r in reals]
+            sp_geo_vals  = [r["results"][i]["fi_minus_sp_on_geo"]  for r in reals]
+            gn_fi_vals   = [r["results"][i]["gen_minus_geo_on_fi"]  for r in reals]
+            gn_geo_vals  = [r["results"][i]["gen_minus_geo_on_geo"] for r in reals]
+            fg_fi_vals   = [r["results"][i]["fi_minus_geo_on_fi"]   for r in reals]
+            fg_geo_vals  = [r["results"][i]["fi_minus_geo_on_geo"]  for r in reals]
+            rows.append({
+                "L": L, "J_over_U": ju, "mu_max": mu_max, "tau": tau,
+                "n_real":             len(reals),
+                "n_shell_perms":      reals[0].get("n_shell_perms", 0),
+                "fi_minus_sp_fi_mean":  float(np.mean(sp_fi_vals)),
+                "fi_minus_sp_fi_std":   float(np.std(sp_fi_vals)),
+                "fi_minus_sp_geo_mean": float(np.mean(sp_geo_vals)),
+                "fi_minus_sp_geo_std":  float(np.std(sp_geo_vals)),
+                "gen_minus_geo_fi_mean":  float(np.mean(gn_fi_vals)),
+                "gen_minus_geo_fi_std":   float(np.std(gn_fi_vals)),
+                "gen_minus_geo_geo_mean": float(np.mean(gn_geo_vals)),
+                "gen_minus_geo_geo_std":  float(np.std(gn_geo_vals)),
+                "fi_minus_geo_fi_mean":   float(np.mean(fg_fi_vals)),
+                "fi_minus_geo_geo_mean":  float(np.mean(fg_geo_vals)),
+            })
+
+    if not rows:
+        print("No shell-perm results to write.")
+        return
+
+    df = pd.DataFrame(rows)
+    csv_path = os.path.join(TAB_DIR, "shell_perm_results.csv")
+    df.to_csv(csv_path, index=False)
+    print(f"\nShell-perm CSV → {csv_path}")
+
+    # Figure: 3 rows (fi−sp@fi, fi−sp@geo, gen−geo@geo) × n_tau columns
+    tau_vals = sorted(df["tau"].unique())
+    mu_vals  = sorted(df["mu_max"].unique())
+    n_tau    = len(tau_vals)
+    x = np.arange(len(mu_vals))
+    w = 0.55
+
+    row_specs = [
+        ("fi_minus_sp_fi",   "fi−sp@fi (within-shell kill-test)"),
+        ("fi_minus_sp_geo",  "fi−sp@geo (cross eval)"),
+        ("gen_minus_geo_geo","gen−geo@geo (generator arm)"),
+    ]
+    fig, axes = plt.subplots(3, n_tau, figsize=(4.5 * n_tau, 10),
+                              sharey="row", sharex="col")
+    if n_tau == 1:
+        axes = axes.reshape(3, 1)
+
+    for col, tau in enumerate(tau_vals):
+        sub = df[abs(df["tau"] - tau) < 0.01]
+        for row, (key, rlbl) in enumerate(row_specs):
+            ax = axes[row, col]
+            y   = [sub[abs(sub["mu_max"] - m) < 1e-9][f"{key}_mean"].mean()
+                   for m in mu_vals]
+            err = [sub[abs(sub["mu_max"] - m) < 1e-9][f"{key}_std"].mean()
+                   for m in mu_vals]
+            colors = ["C2" if v > 0 else "C3" for v in y]
+            ax.bar(x, y, w, yerr=err, capsize=5, color=colors, alpha=0.82,
+                   ecolor="black", error_kw={"lw": 1.2})
+            ax.axhline(0, color="gray", lw=0.8, ls="--")
+            ax.set_xticks(x)
+            ax.set_xticklabels([f"μ={m:.2f}" for m in mu_vals])
+            if col == 0:
+                ax.set_ylabel(rlbl, fontsize=9)
+            if row == 0:
+                ax.set_title(f"τ = {tau:.0f}", fontsize=11)
+            if row == len(row_specs) - 1:
+                ax.set_xlabel("Disorder strength μ_max")
+
+    fig.suptitle(
+        "Shell-matched permutation kill-test + generator-action arm\n"
+        "(green = fi/gen beats baseline, red = baseline wins)",
+        fontsize=11)
+    fig.tight_layout()
+    savefig(fig, "fig_shell_perm")
+    print(f"Shell-perm figure → {os.path.join(FIG_DIR, 'fig_shell_perm.pdf')}")
+
+
+# ---------------------------------------------------------------------------
 # CLI + MAIN
 # ---------------------------------------------------------------------------
 
@@ -1186,6 +1631,9 @@ def parse_args():
                    help="Base RNG seed for disorder draws (default: SEED + 1).")
     p.add_argument("--dis-workers", type=int, default=1,
                    help="Parallel workers for disorder realizations (default: 1).")
+    p.add_argument("--shell-perm", action="store_true",
+                   help="Run shell-matched permutation kill-test (requires prior "
+                        "--disorder checkpoints).")
     return p.parse_args()
 
 
@@ -1222,6 +1670,21 @@ def main():
     if args.gamma_extra: cfg["GAMMA_EXTRA"]   = args.gamma_extra
 
     save_json(cfg, os.path.join(DATA_DIR, "config.json"))
+
+    # --- Shell-perm experiment ---
+    if args.shell_perm:
+        dis_strengths = args.disorder_strengths or [0.10, 0.20]
+        dis_seed      = args.disorder_seed or (cfg["SEED"] + 1)
+        print(f"  Disorder strengths : {dis_strengths}")
+        print(f"  Realizations       : {args.disorder_realizations}")
+        print(f"  Disorder seed      : {dis_seed}\n")
+        all_sp = run_shell_perm_experiment(
+            cfg, dis_strengths, args.disorder_realizations,
+            dis_seed, resume=args.resume, n_workers=args.dis_workers)
+        print_shell_perm_summary(all_sp)
+        make_shell_perm_outputs(all_sp)
+        print(f"\nDone. {time.time() - t0:.0f}s")
+        return
 
     # --- Disorder experiment (runs instead of main sweep when --disorder is set) ---
     if args.disorder:
