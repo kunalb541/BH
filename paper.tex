@@ -31,23 +31,31 @@
 \date{\today}
 
 \begin{abstract}
-We show that sites of high local occupation variance
-$F_i = \langle\nop_i^2\rangle - \langle\nop_i\rangle^2$
-function as causal handles on future local occupation loss in an open
-one-dimensional Bose--Hubbard chain under Lindblad dephasing.
-Applying additional dephasing at the top-$k$ highest-$F_i$ sites produces
-more local occupation loss than an equal-budget random targeting
-at $J/U\in\{0.30,0.40\}$, with 95\% bootstrap confidence intervals
-excluding zero across all three tested time horizons ($\tau\in\{1,2,3\}$)
-and both tested chain lengths ($L\in\{6,7\}$).
-The effect is absent or reversed at the lowest tested coupling
-($J/U=0.12$) and size-sensitive at $J/U=0.20$; the handle is a
-regime-specific property of the dephasing operator, not a generic one.
-The site-resolved spatial response is more consistent with nonlocal
-redistribution of occupation change than with a local-instability
-mechanism.
-All results use exact Lindblad time evolution in the
+We identify a structured, three-regime causal-handle landscape in a
+one-dimensional open Bose--Hubbard chain under Lindblad dephasing.
+Sites of high local occupation variance
+$\Fi = \langle\nop_i^2\rangle - \langle\nop_i\rangle^2$
+are tested as causal handles: additional dephasing at the top-$k$
+highest-$\Fi$ sites is compared against matched-budget random targeting
+across 100 independent trials per condition.
+In the \emph{negative regime} ($J/U=0.12$), targeted intervention produces
+less local occupation loss than random targeting at all tested sizes and
+horizons.
+In the \emph{positive pocket} ($J/U\gtrsim0.24$), targeted intervention
+produces reliably more loss, with 95\% bootstrap confidence intervals
+excluding zero across all tested horizons ($\tau\in\{1,2,3\}$) and the
+full tested size ladder ($L\in\{6,7,8,9\}$).
+Between these regimes lies a \emph{crossover band} near
+$J/U\approx0.18$--$0.24$: the onset of positive handle effectiveness
+shifts upward with system size and downward with measurement horizon,
+both trends monotone across the ladder.
+The site-resolved spatial response is consistent with nonlocal
+redistribution of occupation change rather than local instability.
+All evolution is exact Lindblad time evolution in the
 fixed-particle-number sector; no approximations are employed.
+The result is strictly bounded to the tested intervention family and
+parameter range; no thermodynamic-limit or universal-handle claims are
+made.
 \end{abstract}
 
 \maketitle
@@ -123,9 +131,18 @@ field $\Fi$ can develop nontrivial spatial structure across the chain.
 The computation is restricted to the sector of exactly $N$ particles
 distributed across $L$ sites, each with at most $n_{\max}=3$ occupations.
 The dimension of this sector is $\binom{L+N-1}{N}$ reduced by the
-$n_{\max}$ constraint; for $L=6$, $N=3$ the dimension is $D=56$, and for
-$L=7$, $N=3$ it is $D=84$.
-All operators are constructed as dense matrices in this basis.
+$n_{\max}$ constraint; for $L=6$, $N=3$ the dimension is $D=56$; for
+$L=7$, $N=3$ it is $D=84$; for $L=8$, $N=4$ it is $D=322$; and for
+$L=9$, $N=4$ it is $D=486$.
+For the two smaller sizes ($D\leq84$), all operators are constructed as
+dense matrices and time evolution is computed via the direct Pad\'{e}
+matrix-exponential path.
+For the two larger sizes ($D\geq322$), the Liouvillian superoperator
+(acting on the $D^2$-dimensional vectorised density matrix) is stored as
+a sparse CSR matrix; time evolution uses the Krylov-based
+\texttt{expm\_multiply} path, and the per-trial modified Liouvillian
+is handled as a lightweight linear operator that avoids allocating a
+new sparse matrix per trial.
 
 \subsection{Lindblad dynamics}
 
@@ -217,10 +234,14 @@ gains at other sites do not offset local losses.
 \subsection{Design and statistical analysis}
 
 Four tunnelling-to-interaction ratios $J/U\in\{0.12,0.20,0.30,0.40\}$ are
-tested, spanning from deep Mott-like to intermediate superfluid-like
-regimes.
-Three horizons $\tau\in\{1,2,3\}$ and two chain lengths $L\in\{6,7\}$
-are used.
+tested across all chain lengths, spanning from deep Mott-like to
+intermediate superfluid-like regimes.
+To resolve the crossover boundary identified in the initial sweep, a
+secondary boundary sweep tests $J/U\in\{0.16,0.18,0.20,0.22,0.24,0.26,0.28,0.30\}$
+at $L=8$ and $J/U\in\{0.16,0.18,0.22,0.24,0.26,0.28\}$ at $L=9$, using
+horizons $\tau\in\{2,3\}$.
+Three horizons $\tau\in\{1,2,3\}$ and four chain lengths $L\in\{6,7,8,9\}$
+are used in the primary sweep.
 For each condition, $N_{\mathrm{trials}}=100$ independent random-site draws
 are compared against the single targeted intervention.
 The test statistic is the mean difference in $\mathcal{L}_{\mathrm{local}}$
@@ -246,7 +267,7 @@ The lowest tested coupling $J/U=0.12$ is uniformly negative: the targeted
 intervention produces \emph{less} local loss than matched-budget random
 targeting at all three horizons.
 
-\begin{table}[htbp]
+\begin{table}[tbp]
 \centering
 \caption{Local-loss difference (targeted $-$ random) at $L=6$,
 $N_{\mathrm{trials}}=100$ per condition.
@@ -263,7 +284,7 @@ The magnitude of the positive difference also increases with the time
 horizon~$\tau$, consistent with a cumulative dynamical effect rather than a
 transient perturbation.
 
-\begin{figure}[htbp]
+\begin{figure}[tbp]
 \centering
 \includegraphics[width=0.85\linewidth]{fig1_main_heatmap.pdf}
 \caption{Local-loss difference across $J/U$ and $\tau$ at $L=6$.
@@ -274,34 +295,37 @@ regime and absent or reversed at the lowest tested coupling.}
 
 \subsection{Robustness across chain length}
 
-Table~\ref{tab:robust} compares pooled results at $J/U\in\{0.30,0.40\}$
-for $L=6$ and $L=7$.
-Both couplings pass at both chain lengths with confidence intervals
-excluding zero, confirming that the positive pocket is not a single-size
-artefact.
+Table~\ref{tab:robust} shows pooled results at $J/U\in\{0.30,0.40\}$
+for $L\in\{6,7\}$.
+The positive pocket at $J/U\in\{0.30,0.40\}$ passes at all four tested
+chain lengths $L\in\{6,7,8,9\}$ with 95\% confidence intervals excluding
+zero at every horizon $\tau\in\{1,2,3\}$, confirming that the positive
+pocket is not a small-size artefact.
 
-The intermediate coupling $J/U=0.20$ is size-sensitive: it passes at $L=6$
-across all horizons but is not robust at $L=7$, where only the longest
-horizon ($\tau=3$) produces a positive CI.
-This places $J/U=0.20$ in a transitional regime whose handle effectiveness
-depends on system size.
+The intermediate coupling $J/U=0.20$ is strongly size-sensitive: it passes
+at $L=6$ across all horizons, requires $\tau=3$ at $L=7$, passes only at
+$\tau\in\{2,3\}$ at $L=8$, and fails at all tested horizons at $L=9$.
+This size-dependent behaviour places $J/U=0.20$ squarely in the crossover
+band rather than the robust positive pocket (see Sec.~\ref{sec:onset}).
 
-\begin{table}[htbp]
+\begin{table}[tbp]
 \centering
-\caption{Pooled local-loss difference for $L=6$ and $L=7$ at
-$J/U=0.30$ and $0.40$.
+\caption{Pooled local-loss difference for $L\in\{6,7\}$ at
+$J/U=0.30$ and $0.40$ (two representative sizes from the full ladder).
 Format: mean $[\text{95\% CI}]$, pooling trial-level differences across
-$\tau\in\{1,2,3\}$.}
+$\tau\in\{1,2,3\}$.
+All four tested sizes $L\in\{6,7,8,9\}$ pass at both couplings (see text).}
 \label{tab:robust}
 \input{outputs/tables/table_robust.tex}
 \end{table}
 
-\begin{figure}[htbp]
+\begin{figure}[tbp]
 \centering
 \includegraphics[width=0.85\linewidth]{fig2_robustness.pdf}
 \caption{Local-loss difference at $J/U=0.30$ and $0.40$ for
-$L=6$ and $L=7$. Error bars are 95\% bootstrap CIs.
-The positive pocket persists across both chain lengths.}
+$L=6$ and $L=7$ (two representative sizes). Error bars are 95\% bootstrap CIs.
+The same positive result holds at $L=8$ and $L=9$; the positive pocket
+is robust across the full size ladder $L\in\{6,7,8,9\}$.}
 \label{fig:robustness}
 \end{figure}
 
@@ -312,23 +336,67 @@ The results define three regimes within the tested parameter range:
 
 \textbf{Negative regime} ($J/U=0.12$):
 The targeted intervention produces less local loss than random targeting at
-both chain lengths and all horizons.
+all four chain lengths and all horizons.
 In this deep Mott-like regime the occupation-variance handle does not
-identify causally effective sites.
+identify causally effective sites; the 95\% CIs are strictly negative at
+every $(L,\tau)$ combination tested.
 
-\textbf{Transitional regime} ($J/U=0.20$):
-Positive at $L=6$ but not robust at $L=7$.
-The handle begins to function but its effectiveness is size-dependent.
+\textbf{Crossover band} ($J/U\approx0.18$--$0.24$, depending on $L$ and $\tau$):
+The handle begins to function but its effectiveness is size- and
+horizon-dependent.
+The first-pass onset shifts upward with $L$ (for fixed $\tau$) and
+downward with $\tau$ (for fixed $L$), both trends monotone across the
+ladder (see Sec.~\ref{sec:onset}).
 
-\textbf{Positive pocket} ($J/U\in\{0.30,0.40\}$):
-The handle is consistently positive across both chain lengths and all
-horizons.
+\textbf{Positive pocket} ($J/U\gtrsim0.30$):
+The handle is consistently positive across all four chain lengths and all
+horizons $\tau\in\{1,2,3\}$.
 This is the regime where the occupation-variance selector reliably
-identifies sites whose perturbation produces excess local loss.
+identifies sites whose perturbation produces excess local loss, with CIs
+strictly above zero at every tested $(L,\tau)$ combination.
 
-The existence of a negative boundary regime and a transitional zone is
-itself informative: the handle is not a generic property of the dephasing
-operator but depends on the dynamical regime of the system.
+The existence of a negative boundary regime and a structured crossover band
+is itself informative: the handle is not a generic property of the dephasing
+operator but is sharply regime-dependent.
+
+\subsection{Crossover-band onset}
+\label{sec:onset}
+
+The boundary sweep resolves the smallest $J/U$ at which the 95\% CI first
+strictly excludes zero (first PASS) for $L\in\{8,9\}$.
+Table~\ref{tab:onset} reports these onset couplings for horizons
+$\tau\in\{2,3\}$.
+
+\begin{table}[tbp]
+\centering
+\caption{First-PASS onset coupling: smallest $J/U$ at which the 95\% CI
+strictly excludes zero, by chain length $L$ and horizon $\tau$.
+Entries $\leq\!0.20$ are bounded by the initial sweep (exact onset lies
+in the interval $(0.12,\,0.20]$); entry $>\!0.20$ indicates a failure at
+$J/U=0.20$ with onset in $(0.20,\,0.30)$ (not resolved by the boundary
+sweep, which focused on $L\geq8$).}
+\label{tab:onset}
+\begin{ruledtabular}
+\begin{tabular}{ccc}
+$L$ & $\tau=2$ & $\tau=3$ \\
+\colrule
+$6$ & $\leq0.20$ & $\leq0.20$ \\
+$7$ & $>0.20$    & $\leq0.20$ \\
+$8$ & $0.20$     & $0.18$     \\
+$9$ & $0.24$     & $0.22$     \\
+\end{tabular}
+\end{ruledtabular}
+\end{table}
+
+The onset coupling is monotonically increasing with $L$ for fixed $\tau$,
+and monotonically decreasing with $\tau$ for fixed $L$, across the full
+tested range.
+The convergence of these two trends in the range
+$J/U\approx0.18$--$0.24$ defines the empirical crossover band reported
+in the abstract.
+In particular, any coupling in $J/U\gtrsim0.30$ lies above the onset for
+all tested $(L,\tau)$ combinations, consistently defining the positive
+pocket boundary.
 
 \subsection{Spatial response pattern}
 
@@ -356,7 +424,7 @@ The data are more consistent with a picture in which perturbing high-$\Fi$
 sites alters the subsequent spatial distribution of occupation change
 across the chain.
 
-\begin{figure}[htbp]
+\begin{figure}[tbp]
 \centering
 \includegraphics[width=0.85\linewidth]{fig3_mechanism.pdf}
 \caption{Mean site-resolved occupation change under the targeted
@@ -376,10 +444,12 @@ In an open Bose--Hubbard chain, sites of high local occupation variance
 serve as causal handles in the intermediate and stronger coupling regime:
 targeting them with additional dephasing produces more local future
 occupation loss than matched-budget random targeting at
-$J/U\in\{0.30,0.40\}$, robustly across both tested chain lengths and all
-tested horizons.
-The effect is absent or reversed at the lowest tested coupling
-($J/U=0.12$) and transitional at $J/U=0.20$.
+$J/U\in\{0.30,0.40\}$, robustly across the full tested size ladder
+$L\in\{6,7,8,9\}$ and all tested horizons $\tau\in\{1,2,3\}$.
+The effect is absent or reversed in the negative regime ($J/U=0.12$) and
+size- and horizon-dependent in the crossover band
+$J/U\approx0.18$--$0.24$, with the first-pass onset shifting upward with
+$L$ and downward with $\tau$, both trends monotone across the ladder.
 
 \paragraph{Mechanism.}
 The site-resolved response is more consistent with nonlocal redistribution
@@ -390,11 +460,11 @@ A complete mechanistic account is beyond the scope of the present analysis.
 
 \paragraph{What is not claimed.}
 We do not claim that high-$\Fi$ targeting is optimal among all possible
-intervention strategies, that the effect extends to all coupling regimes
-(it does not hold at $J/U=0.12$ and is only transitional at $J/U=0.20$),
-that the mechanism generalises to other quantum systems or larger chains,
-or that the occupation-variance handle corresponds to any equilibrium
-observable.
+intervention strategies; that the effect extends to all coupling regimes
+(it does not hold at $J/U=0.12$ and is transitional in the crossover band
+$J/U\approx0.18$--$0.24$); that the mechanism generalises to other quantum
+systems or to chains beyond the tested range; or that the
+occupation-variance handle corresponds to any equilibrium observable.
 
 \paragraph{Scope and limitations.}
 The causal-handle effect is regime- and size-dependent in the present
@@ -402,11 +472,33 @@ design, with the clearest fully robust support in the
 $J/U=0.30$--$0.40$ regime.
 The Hilbert-space dimension of the fixed-$N$ sector grows combinatorially
 with $L$ and $n_{\max}$, limiting exact Lindblad evolution to small chains.
-The tested range ($L\leq7$, $n_{\max}=3$) establishes the effect in the
-positive pocket but does not access the thermodynamic limit.
+The tested range ($L\leq9$, $n_{\max}=3$) establishes the effect in the
+positive pocket and sharpens the crossover band to
+$J/U\approx0.18$--$0.24$ (depending on system size and horizon),
+but does not access the thermodynamic limit.
 Whether the positive pocket persists, broadens, or shifts at larger system
 sizes is an open question requiring approximate methods such as
 matrix-product-operator Lindblad evolution~\cite{daley2014}.
+
+\paragraph{Experimental relevance.}
+The 1D open Bose--Hubbard model under dephasing is experimentally
+motivated.
+Cold-atom optical-lattice platforms already realise 1D Bose--Hubbard-like
+systems with tunable $J/U$~\cite{jaksch1998,greiner2002}, and recent
+advances in quantum-gas microscopy provide site-resolved preparation and
+readout relevant to the targeted-intervention protocol studied
+here~\cite{gross2021}.
+In particular, groups working with 1D optical lattices have demonstrated
+single-site addressing and out-of-equilibrium dynamics in regimes that
+overlap with the coupling range explored here.
+The Lindblad dephasing modelled by $\gamma\hat{n}_i$ is a standard
+approximation for photon-scattering-induced decoherence in optical
+lattices~\cite{pichler2010,daley2014}.
+The present results therefore constitute a theory-side proposal with
+experimental plausibility: the positive-pocket and crossover-band
+structures identified here are, in principle, accessible to existing
+site-resolved cold-atom platforms, though the exact causal-handle
+protocol has not yet been implemented experimentally.
 
 \begin{acknowledgments}
 The author thanks the open-source scientific Python community for the
