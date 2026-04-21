@@ -29,9 +29,14 @@ env/
 *.nav
 *.snm
 
+# Checkpoint JSON files (large, reproducible via bh.py --resume)
+outputs/checkpoints/
+
 # Generated outputs (tracked selectively)
 outputs/logs/
-outputs/figures/*.png
+outputs/figures/
+outputs/tables/
+outputs/data/
 
 # IDE
 .vscode/

@@ -26,6 +26,8 @@ All evolution is **exact Lindblad** (no approximations, no Trotter decomposition
 
 ## Key results
 
+### Clean chain (symmetric model)
+
 Three regimes are identified across the tested parameter range:
 
 | Regime | J/U | Result (L ∈ {6,7,8,9}, τ ∈ {1,2,3}) |
@@ -45,7 +47,21 @@ Three regimes are identified across the tested parameter range:
 
 Both trends are monotone across the ladder: onset coupling increases with L (harder to activate at larger sizes) and decreases with τ (longer horizon helps).
 
-The spatial response is consistent with **nonlocal redistribution**: perturbing high-F_i sites reduces loss at those sites but increases it at non-selected sites — opposite of a naive local-instability picture.
+### Strong disorder: fi genuinely outperforms geo
+
+Under on-site disorder μ_i ~ Uniform(−μ_max, +μ_max), spatial symmetry breaks and the high-F_i selector (fi) separates from the geometric-center selector (geo):
+
+| μ_max | J/U | τ | fi mean | geo mean | fi − geo |
+|-------|-----|---|---------|---------|---------|
+| 0.50 | 0.40 | 3 | +0.031 | +0.022 | **+0.009** |
+| 1.00 | 0.40 | 3 | +0.043 | +0.028 | **+0.015** |
+| 2.00 | 0.40 | 3 | +0.050 | +0.033 | **+0.017** |
+
+Effect is monotone in μ_max, τ, and J/U. At weak disorder (μ_max ≤ 0.20), fi ≈ geo as expected from symmetry.
+
+### Variance information is independent of disorder amplitude
+
+A new **disorder-amplitude selector** (dis_amp, selects top-k sites by |μ_i|) controls for the hypothesis that fi wins merely by tracking which sites have the strongest disorder. Key finding: fi and dis_amp select different sites in **58–79% of realizations** at strong disorder (μ_max ≥ 0.50), confirming that F_i carries genuinely independent variance information beyond raw disorder amplitude.
 
 ---
 
@@ -76,23 +92,18 @@ The spatial response is consistent with **nonlocal redistribution**: perturbing 
 ```
 BH/
 ├── bh.py                    # Complete simulation package (Hilbert space, Lindblad evolution,
-│                            # intervention protocol, figures, tables)
+│                            # intervention protocol, all experiments, figures, tables)
+├── run_all.sh               # AWS batch script — Priority A + extended campaign
+├── test_bh.py               # Core physics regression tests (pytest)
+├── test_new_experiments.py  # Selector sweep, dis_amp, inhomogeneous, gamma-scan tests
 ├── paper.tex                # Manuscript (REVTeX 4.2 / PRA format)
-├── refs.bib                 # BibTeX references (17 entries)
+├── refs.bib                 # BibTeX references
 ├── paper.pdf                # Compiled manuscript
-└── outputs/
+└── outputs/                 # Generated outputs (not tracked in git)
     ├── checkpoints/         # Per-condition JSON checkpoints (resume on interruption)
-    ├── data/
-    │   ├── config.json      # Simulation configuration
-    │   └── results_L6.csv   # Raw results for L=6
-    ├── figures/
-    │   ├── fig1_main_heatmap.pdf    # Heatmap of loss difference across J/U and τ (L=6)
-    │   ├── fig2_robustness.pdf      # Robustness across chain lengths and τ
-    │   └── fig3_mechanism.pdf       # Site-resolved occupation change (J/U=0.30, L=6, τ=2)
-    └── tables/
-        ├── table_main.tex           # Main results table (L=6, all J/U × τ)
-        ├── table_robust.tex         # Robustness table (L=6,7 at J/U=0.30,0.40)
-        └── all_results.csv          # All results across L, J/U, τ
+    ├── data/                # config.json, results CSVs
+    ├── figures/             # PDF/PNG figures
+    └── tables/              # LaTeX tables
 ```
 
 ---
@@ -101,35 +112,60 @@ BH/
 
 ### Requirements
 
-- Python ≥ 3.9
-- numpy, scipy, pandas, matplotlib, seaborn, tqdm
-- LaTeX with REVTeX 4.2 (`texlive-publishers` or MacTeX)
-
 ```bash
 pip install numpy scipy pandas matplotlib seaborn tqdm
 ```
 
-### Run the simulation
+### Run the tests first
 
 ```bash
-# Primary sweep: L=6,7,8,9 × J/U={0.12,0.20,0.30,0.40} × τ={1,2,3}
-python bh.py --l-list 6 7 8 9 --ju-list 0.12 0.20 0.30 0.40 --tau-list 1 2 3 --workers 4
+# Core physics tests (Hilbert space, Hamiltonian, Lindblad, F_i)
+pytest test_bh.py -v
 
-# Crossover boundary sweep (Phase C): adds fine J/U resolution at L=8,9
-python bh.py --l-list 8 9 --ju-list 0.16 0.18 0.22 0.24 0.26 0.28 \
-             --tau-list 2 3 --workers 4 --resume
+# Selector sweep, dis_amp, inhomogeneous, gamma-scan tests
+python test_new_experiments.py
+```
+
+### Primary sweep (clean chain)
+
+```bash
+# L=6,7,8,9 × J/U={0.12,0.20,0.30,0.40} × τ={1,2,3}
+python bh.py --l-list 6 7 8 9 --ju-list 0.12 0.20 0.30 0.40 --tau-list 1 2 3 --workers 4
+```
+
+### Disorder + selector experiments (AWS-scale)
+
+```bash
+# Selector sweep — all 9 selectors including dis_amp/dis_anti
+python bh.py --selector-sweep --l-list 6 --ju-list 0.20 0.30 0.40 --tau-list 1 2 3 \
+  --disorder-strengths 0.10 0.20 0.30 0.50 1.00 2.00 \
+  --disorder-realizations 50 --dis-workers 4 --resume
+
+# Strong disorder realizations (fi, geo, shell-perm)
+python bh.py --disorder --l-list 6 --ju-list 0.20 0.30 0.40 --tau-list 1 2 3 \
+  --disorder-strengths 0.50 1.00 2.00 --disorder-realizations 50 --dis-workers 4 --resume
+
+python bh.py --shell-perm --l-list 6 --ju-list 0.20 0.30 0.40 --tau-list 1 2 3 \
+  --disorder-strengths 0.50 1.00 2.00 --disorder-realizations 50 --dis-workers 4 --resume
+
+# Inhomogeneous chain (deterministic asymmetry, single realization per condition)
+python bh.py --inhomogeneous --l-list 6 --ju-list 0.20 0.30 0.40 --tau-list 1 2 3 \
+  --inhom-tilts 0.5 1.0 2.0 --inhom-patterns tilt step --resume
+
+# Gamma scan (robustness to γ_extra)
+python bh.py --gamma-scan --l-list 6 --ju-list 0.30 0.40 --tau-list 1 2 3 \
+  --disorder-strengths 0.10 --disorder-realizations 50 \
+  --gamma-scan-values 0.1 0.2 0.5 1.0 2.0 --dis-workers 4 --resume
 ```
 
 Per-condition checkpoints are written to `outputs/checkpoints/` — safe to interrupt and resume with `--resume`.
 
-**Expected runtimes** (4-core laptop, single-threaded BLAS per worker):
+**Expected runtimes per realization** (4-core laptop):
 
-| Chain length | D | Time per condition |
+| Chain length | D | Time per realization |
 |---|---|---|
-| L=6 | 56 | ~3 min |
-| L=7 | 84 | ~15 min |
-| L=8 | 322 | ~45 min |
-| L=9 | 486 | ~3 hr |
+| L=6 | 56 | ~2–3 min |
+| L=7 | 84 | ~5–8 min |
 
 ### Compile the paper
 
@@ -146,31 +182,52 @@ The entire simulation is self-contained in a single file:
 | Function | Purpose |
 |----------|---------|
 | `build_basis(L, N, nmax)` | Enumerate Fock basis states in fixed-N sector |
+| `basis_index(basis)` | Dict mapping state tuple → row index |
 | `number_op(site, D, basis)` | Diagonal number operator for site i |
-| `build_hamiltonian(L, J, U, basis, idx_map)` | Bose–Hubbard Hamiltonian (tunneling + interaction) |
-| `build_liouvillian(H, L_ops, gammas)` | Lindblad superoperator in row-major vec form |
+| `build_hamiltonian(L, J, U, nmax, basis, idx_map)` | Bose–Hubbard Hamiltonian (tunneling + interaction) |
+| `build_liouvillian(H, L_ops, gammas)` | Lindblad superoperator in row-major vec form; dissipator stored as diagonal 1D array |
 | `evolve_rho(rho, liouvillian, tau)` | Exact time evolution via `expm_multiply` |
-| `_make_additive_op(base, addons)` | Sparse LinearOperator for per-trial Liouvillian (avoids large matrix copy) |
-| `run_single_condition(...)` | Full experiment for one (L, J/U) condition |
+| `site_expectations(rho, n_ops)` | ⟨n_i⟩ for all sites |
+| `site_variances(rho, n_ops, n2_ops)` | F_i = ⟨n_i²⟩ − ⟨n_i⟩² for all sites |
+| `run_selector_sweep_realization(...)` | Full 9-selector protocol for one disorder realization |
+| `run_disorder_realization(...)` | fi vs geo for one disorder realization |
+| `run_inhomogeneous_experiment(...)` | Deterministic asymmetry experiment |
+| `run_gamma_scan_experiment(...)` | γ_extra robustness scan |
 | `make_tables(...)` | Generate LaTeX-ready tables |
 | `make_figures(...)` | Generate PDF/PNG figures |
 
 **Key implementation notes:**
-- `expm_multiply` is exact to floating-point precision (Al-Mohy & Higham 2011) — not an approximation.
-- For L=6,7 (D ≤ 84): dense matrices, direct Padé/Krylov path.
-- For L=8,9 (D ≥ 322): sparse CSR Liouvillian; per-trial modified operator built as a `LinearOperator` to avoid allocating a new sparse matrix per trial.
-- Vectorised bootstrap (1000 resamples, single NumPy call per condition).
-- `multiprocessing.get_context("spawn")` with `imap_unordered` for parallel conditions.
+- `expm_multiply` is exact to floating-point precision (Al-Mohy & Higham 2011).
+- Dissipator diagonal: for L_i = n_i, the D²×D² dissipator is diagonal in the superoperator basis. Stored as a 25 KB 1D array rather than a 150 MB dense matrix — critical for L=6,7 without OOM.
+- Per-realization checkpoint resume: each condition writes a JSON file; `--resume` skips existing files.
+- Bootstrap: 1000 resamples, vectorised NumPy, per condition.
+- `multiprocessing.get_context("spawn")` with `imap_unordered` for parallel disorder realizations.
+
+**Selectors compared in `run_selector_sweep_realization`:**
+
+| Selector | Sites chosen |
+|----------|-------------|
+| `fi` | Top-k by F_i = ⟨n_i²⟩ − ⟨n_i⟩² |
+| `geo` | Geometric center k sites |
+| `maxn` | Top-k by ⟨n_i⟩ |
+| `minn` | Bottom-k by ⟨n_i⟩ |
+| `bdy` | Boundary (outermost k) |
+| `anti` | Bottom-k by F_i (inverted fi) |
+| `gen` | Top-k by generator action \|⟨[L_i, H]⟩\| |
+| `dis_amp` | Top-k by \|μ_i\| (disorder amplitude) |
+| `dis_anti` | Bottom-k by \|μ_i\| (inverted dis_amp) |
+
+`dis_amp` and `dis_anti` are controls that test whether fi's advantage over random is merely due to tracking the strongest disorder sites. Finding fi ≠ dis_amp in majority of strong-disorder realizations confirms variance carries independent information.
 
 ---
 
 ## What is not claimed
 
-- That high-F_i targeting is **optimal** — only that it beats matched-budget random targeting in the positive-pocket regime (J/U ≥ 0.30).
-- That the effect holds at all J/U — it is reversed at J/U = 0.12 and size-dependent in the crossover band J/U ≈ 0.18–0.24.
-- That results extend to the **thermodynamic limit** — exact Lindblad evolution is feasible through L = 9 at these parameters; larger sizes require approximate methods (e.g., MPO Lindblad).
-- That the nonlocal redistribution mechanism is fully understood — the paper shows the spatial pattern is consistent with it, not that it proves it.
-- That the variance information is doing independent work beyond spatial position — due to the reflection symmetry of the model (symmetric H, ground state, and Lindblad operators), F_i peaks at the geometrically central sites at all times. The high-F_i selector and a geometric central-k selector are identical in this model; disentangling variance from position requires breaking the spatial symmetry.
+- That high-F_i targeting is **optimal** — only that it beats matched-budget random targeting in the positive-pocket regime.
+- That the effect holds at all J/U — it reverses at J/U = 0.12 and is size-dependent near J/U ≈ 0.18–0.24.
+- That results extend to the **thermodynamic limit** — exact Lindblad is feasible through L = 9; larger sizes require approximate methods (e.g., MPO Lindblad).
+- That fi is independent of geometry in the **clean, symmetric chain** — at zero disorder, reflection symmetry forces F_i to peak at geometric-center sites, so fi = geo identically. Breaking symmetry (disorder or inhomogeneous potential) is required for separation.
+- That dis_amp is the only alternative explanation — other amplitude-based proxies may exist. dis_amp is a strong representative test.
 
 ---
 

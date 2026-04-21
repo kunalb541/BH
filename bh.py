@@ -1675,8 +1675,16 @@ def run_selector_sweep_realization(
                             for i in range(L)])
     s_gen = sorted(np.argsort(np.abs(gen_actions))[-k:].tolist())
 
+    # Disorder-amplitude selectors: pick by |mu_i| to test whether fi advantage
+    # comes from variance information or just tracking disorder-site amplitude.
+    # dis_amp: top-k sites by |mu_i|  (same budget as fi, different criterion)
+    # dis_anti: bottom-k sites by |mu_i| (inverted control)
+    s_dis_amp  = sorted(np.argsort(np.abs(mu_vec))[-k:].tolist())
+    s_dis_anti = sorted(np.argsort(np.abs(mu_vec))[:k].tolist())
+
     SEL = {"fi": s_fi, "geo": s_geo, "maxn": s_maxn, "minn": s_minn,
-           "bdy": s_bdy, "anti": s_anti, "gen": s_gen}
+           "bdy": s_bdy, "anti": s_anti, "gen": s_gen,
+           "dis_amp": s_dis_amp, "dis_anti": s_dis_anti}
 
     rng = np.random.default_rng(trial_seed)
 
