@@ -7,6 +7,24 @@ PY=/home/ubuntu/venv/bin/python
 LOG=outputs
 mkdir -p $LOG
 
+# ─── Guarantee S3 sync + self-terminate even if a phase crashes ──────────────
+# trap fires on EXIT (normal completion, error, or signal).
+# This ensures the instance never hangs billing forever if bh.py crashes.
+_cleanup() {
+    EXIT_CODE=$?
+    echo "=== Cleanup triggered (exit code ${EXIT_CODE}) at $(date) ===" | tee -a $LOG/campaign_done.txt
+    echo "=== Syncing checkpoints to S3 ===" | tee -a $LOG/campaign_done.txt
+    aws s3 sync outputs/checkpoints/ s3://bh-results-kunal-2026/checkpoints/ \
+        --region eu-central-1 2>&1 | tail -5 | tee -a $LOG/campaign_done.txt
+    echo "=== Syncing logs/outputs to S3 ===" | tee -a $LOG/campaign_done.txt
+    aws s3 sync outputs/ s3://bh-results-kunal-2026/outputs/ \
+        --exclude "checkpoints/*" --region eu-central-1 2>&1 | tee -a $LOG/campaign_done.txt
+    INSTANCE_ID="$(curl -s http://169.254.169.254/latest/meta-data/instance-id)"
+    echo "Self-terminating $INSTANCE_ID at $(date)" | tee -a $LOG/campaign_done.txt
+    aws ec2 terminate-instances --region eu-central-1 --instance-ids "$INSTANCE_ID"
+}
+trap _cleanup EXIT
+
 # ─── Shared argument bundles ─────────────────────────────────────────────────
 L6="--l-list 6 --ju-list 0.20 0.30 0.40 --tau-list 1 2 3"
 L7="--l-list 7 --ju-list 0.20 0.30 0.40 --tau-list 1 2 3"
@@ -69,16 +87,4 @@ $PY bh.py --selector-sweep $L7 $DIS_COMMON \
 echo "Phase 6 done at $(date)" | tee -a $LOG/phase6.log
 
 echo "=== All phases complete at $(date) ===" | tee $LOG/campaign_done.txt
-
-# ─── Sync to S3 + self-terminate ─────────────────────────────────────────────
-echo "=== Syncing checkpoints to S3 ===" | tee -a $LOG/campaign_done.txt
-aws s3 sync outputs/checkpoints/ s3://bh-results-kunal-2026/checkpoints/ \
-    --region eu-central-1 2>&1 | tail -10 | tee -a $LOG/campaign_done.txt
-
-echo "=== Syncing logs/outputs to S3 ===" | tee -a $LOG/campaign_done.txt
-aws s3 sync outputs/ s3://bh-results-kunal-2026/outputs/ \
-    --exclude "checkpoints/*" --region eu-central-1 2>&1 | tee -a $LOG/campaign_done.txt
-
-INSTANCE_ID="$(curl -s http://169.254.169.254/latest/meta-data/instance-id)"
-echo "S3 sync complete. Self-terminating $INSTANCE_ID at $(date)" | tee -a $LOG/campaign_done.txt
-aws ec2 terminate-instances --region eu-central-1 --instance-ids "$INSTANCE_ID"
+# _cleanup trap fires automatically on normal exit — S3 sync + self-terminate handled there.

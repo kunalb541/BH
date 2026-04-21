@@ -88,8 +88,34 @@ def savefig(fig, stem):
 
 
 def save_json(obj, path):
-    with open(path, "w") as f:
+    """Atomic JSON write: write to .tmp then os.replace() to avoid partial files.
+
+    If the process is killed mid-write, the original file (if any) is preserved
+    and the .tmp file is left behind but never loaded (resume checks the real path).
+    """
+    tmp = path + ".tmp"
+    with open(tmp, "w") as f:
         json.dump(obj, f, indent=2, default=float)
+    os.replace(tmp, path)
+
+
+def _safe_load_json(path):
+    """Load a JSON checkpoint, returning None (and deleting the file) if corrupt.
+
+    Guards against JSONDecodeError from partial writes when a worker is killed
+    mid-write.  The atomic save_json() above prevents this in new writes, but
+    old checkpoints written non-atomically may still be corrupt.
+    """
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except (json.JSONDecodeError, OSError) as exc:
+        print(f"  [WARN] corrupt/unreadable checkpoint {path}: {exc}  — treating as missing")
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+        return None
 
 
 # ---------------------------------------------------------------------------
@@ -160,9 +186,10 @@ def site_expectations(rho, n_ops):
 
 
 def site_variances(rho, n_ops, n2_ops):
+    """Fᵢ = ⟨nᵢ²⟩ − ⟨nᵢ⟩².  Clamped to 0 to absorb floating-point noise."""
     means = site_expectations(rho, n_ops)
     sq    = np.array([np.real(np.trace(n2op @ rho)) for n2op in n2_ops])
-    return sq - means**2
+    return np.maximum(sq - means**2, 0.0)
 
 
 # ---------------------------------------------------------------------------
@@ -245,10 +272,9 @@ def _make_additive_op(base, addons):
     once per random trial.  The result is passed directly to evolve_rho.
 
     matvec  computes (base + Σ addons) @ v   — exact.
-    rmatvec computes (base + Σ addons).T @ v — used only for expm_multiply's
-    one-norm estimation; an approximation here is fine for correctness.
-
-    .T on a CSR matrix returns a CSC view sharing the same data buffer (no copy).
+    rmatvec computes (base + Σ addons).T @ v — exact.  Used by expm_multiply for
+    one-norm estimation.  .T on CSR returns a CSC view sharing the same data
+    buffer (no copy, no approximation).
     """
     n        = base.shape[0]
     base_T   = base.T                   # CSC view, O(1), no data copy
@@ -286,10 +312,15 @@ def _fast_expectations(rho_diag, n_diags):
 
 
 def _fast_variances(rho_diag, n_diags, n2_diags):
-    """Fᵢ = ⟨nᵢ²⟩ − ⟨nᵢ⟩².  O(L·D)."""
+    """Fᵢ = ⟨nᵢ²⟩ − ⟨nᵢ⟩².  O(L·D).
+
+    Clamp to zero: floating-point cancellation between sq and means**2 can
+    produce values of order -1e-15 for near-Fock states.  These are unphysical
+    (variance >= 0 by Cauchy-Schwarz) and would corrupt argsort-based selectors.
+    """
     means = n_diags  @ rho_diag        # (L,)
     sq    = n2_diags @ rho_diag        # (L,)
-    return sq - means ** 2
+    return np.maximum(sq - means ** 2, 0.0)
 
 
 def _bootstrap_ci(diffs, n_boot, rng, lo=2.5, hi=97.5):
@@ -311,8 +342,7 @@ def _ckpt_path(L, N, J_over_U):
 def _load_ckpt(L, N, J_over_U):
     p = _ckpt_path(L, N, J_over_U)
     if os.path.exists(p):
-        with open(p) as f:
-            return json.load(f)
+        return _safe_load_json(p)
     return None
 
 
@@ -935,9 +965,10 @@ def run_disorder_experiment(cfg, disorder_strengths, n_realizations,
                     key  = (L, N, ju, mu_max, r)
                     ckpt = _dis_ckpt_path(L, N, ju, mu_max, r)
                     if resume and os.path.exists(ckpt):
-                        with open(ckpt) as f:
-                            ckpt_cache[key] = json.load(f)
-                    else:
+                        _d = _safe_load_json(ckpt)
+                        if _d is not None:
+                            ckpt_cache[key] = _d
+                    if key not in ckpt_cache:
                         pending_args.append((
                             L, N, cfg["NMAX"], ju, mu_max, r,
                             cfg["GAMMA_BASE"], cfg["GAMMA_EXTRA"],
@@ -1357,9 +1388,9 @@ def _shell_perm_worker(args):
 
     # Reuse mu_vec from existing disorder checkpoint (ensures same realization)
     dis_ckpt = _dis_ckpt_path(L, N, ju, mu_max, r)
-    if os.path.exists(dis_ckpt):
-        with open(dis_ckpt) as f:
-            mu_vec = np.array(json.load(f)["mu"])
+    _dis_data = _safe_load_json(dis_ckpt) if os.path.exists(dis_ckpt) else None
+    if _dis_data is not None:
+        mu_vec = np.array(_dis_data["mu"])
     else:
         dis_rng = np.random.default_rng(_dis_seed(dis_seed_base, L, ju, mu_max, r, 0))
         mu_vec  = dis_rng.uniform(-mu_max, mu_max, size=L)
@@ -1393,9 +1424,10 @@ def run_shell_perm_experiment(cfg, disorder_strengths, n_realizations,
                     key  = (L, N, ju, mu_max, r)
                     ckpt = _sp_ckpt_path(L, N, ju, mu_max, r)
                     if resume and os.path.exists(ckpt):
-                        with open(ckpt) as f:
-                            ckpt_cache[key] = json.load(f)
-                    else:
+                        _d = _safe_load_json(ckpt)
+                        if _d is not None:
+                            ckpt_cache[key] = _d
+                    if key not in ckpt_cache:
                         pending_args.append((
                             L, N, cfg["NMAX"], ju, mu_max, r,
                             cfg["GAMMA_BASE"], cfg["GAMMA_EXTRA"],
@@ -1757,9 +1789,9 @@ def _sel_worker(args):
         return None
 
     dis_ckpt = _dis_ckpt_path(L, N, ju, mu_max, r)
-    if os.path.exists(dis_ckpt):
-        with open(dis_ckpt) as f:
-            mu_vec = np.array(json.load(f)["mu"])
+    _dis_data = _safe_load_json(dis_ckpt) if os.path.exists(dis_ckpt) else None
+    if _dis_data is not None:
+        mu_vec = np.array(_dis_data["mu"])
     else:
         rng = np.random.default_rng(_dis_seed(dis_seed_base, L, ju, mu_max, r, 0))
         mu_vec = rng.uniform(-mu_max, mu_max, size=L)
@@ -1783,9 +1815,10 @@ def run_selector_sweep_experiment(cfg, disorder_strengths, n_realizations,
                     key  = (L, N, ju, mu_max, r)
                     ckpt = _sel_ckpt_path(L, N, ju, mu_max, r)
                     if resume and os.path.exists(ckpt):
-                        with open(ckpt) as f:
-                            ckpt_cache[key] = json.load(f)
-                    else:
+                        _d = _safe_load_json(ckpt)
+                        if _d is not None:
+                            ckpt_cache[key] = _d
+                    if key not in ckpt_cache:
                         pending.append((L, N, cfg["NMAX"], ju, mu_max, r,
                                         cfg["GAMMA_BASE"], cfg["GAMMA_EXTRA"],
                                         cfg["TAU_LIST"], cfg["N_TRIALS"],
@@ -1947,10 +1980,11 @@ def run_inhomogeneous_experiment(cfg, mu_tilts, patterns, resume=False):
                 for pattern in patterns:
                     ckpt = _inhom_ckpt_path(L, N, ju, mu_tilt, pattern)
                     if resume and os.path.exists(ckpt):
-                        with open(ckpt) as f:
-                            res = json.load(f)
-                        results.append((L, N, ju, mu_tilt, pattern, res))
-                        continue
+                        res = _safe_load_json(ckpt)
+                        if res is not None:
+                            results.append((L, N, ju, mu_tilt, pattern, res))
+                            continue
+                        # else corrupt — fall through to re-run
 
                     mu_vec = _build_inhomogeneous_mu(L, mu_tilt, pattern)
                     t_seed = _dis_seed(seed, L, ju, int(mu_tilt * 1000), 0, 0)
@@ -2068,9 +2102,9 @@ def _gscan_worker(args):
         return None
 
     dis_ckpt = _dis_ckpt_path(L, N, ju, mu_max, r)
-    if os.path.exists(dis_ckpt):
-        with open(dis_ckpt) as f:
-            mu_vec = np.array(json.load(f)["mu"])
+    _dis_data = _safe_load_json(dis_ckpt) if os.path.exists(dis_ckpt) else None
+    if _dis_data is not None:
+        mu_vec = np.array(_dis_data["mu"])
     else:
         rng    = np.random.default_rng(_dis_seed(dis_seed_base, L, ju, mu_max, r, 0))
         mu_vec = rng.uniform(-mu_max, mu_max, size=L)
@@ -2097,9 +2131,10 @@ def run_gamma_scan_experiment(cfg, gamma_extra_list, disorder_strengths,
                         key  = (L, N, ju, mu_max, gx, r)
                         ckpt = _gscan_ckpt_path(L, N, ju, mu_max, gx, r)
                         if resume and os.path.exists(ckpt):
-                            with open(ckpt) as f:
-                                ckpt_cache[key] = json.load(f)
-                        else:
+                            _d = _safe_load_json(ckpt)
+                            if _d is not None:
+                                ckpt_cache[key] = _d
+                        if key not in ckpt_cache:
                             pending.append((L, N, cfg["NMAX"], ju, mu_max, gx, r,
                                             cfg["GAMMA_BASE"], cfg["TAU_LIST"],
                                             cfg["N_TRIALS"], cfg["BURN_IN_TIME"],

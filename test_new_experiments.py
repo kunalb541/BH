@@ -434,31 +434,40 @@ def test_dis_amp_differs_from_fi_at_strong_disorder():
     """At strong disorder (mu_max=0.5), fi and dis_amp typically select different sites.
 
     This is the core scientific claim: F_i carries variance information that is
-    independent of mere disorder amplitude |mu_i|.  We check over 20 realizations
-    that fi ≠ dis_amp in at least 50% (empirically 58–79%).
+    independent of mere disorder amplitude |mu_i|.
+
+    Uses nmax=3 (the paper's actual parameter) so the Hilbert space and variance
+    structure match the reported 58–79% disagreement rate.  We assert ≥50% across
+    20 realizations — well supported by the full 50-realization AWS runs.
+
+    NOTE: nmax=2 (the test-suite default) gives a different variance landscape
+    and cannot be used to verify this claim.
     """
-    rng = np.random.default_rng(2026)
+    rng = np.random.default_rng(20260325)   # paper seed for reproducibility
+    nmax3 = 3                                # paper's actual nmax
     n_real = 20
     n_differ = 0
     for _ in range(n_real):
         mu_vec = rng.uniform(-0.5, 0.5, size=L)
         res = bh.run_selector_sweep_realization(
-            L, N, nmax, JU, mu_vec,
+            L, N, nmax3, JU, mu_vec,          # nmax=3 ← critical
             gamma_base=0.1, gamma_extra=0.5,
-            tau_list=[1.0], n_trials=2, burn_in_time=1.0,
-            trial_seed=int(rng.integers(0, 10000)), n_boot=5)
+            tau_list=[1.0], n_trials=3, burn_in_time=1.0,
+            trial_seed=int(rng.integers(0, 10000)), n_boot=10)
         if res["sel_sites"]["fi"] != res["sel_sites"]["dis_amp"]:
             n_differ += 1
     frac = n_differ / n_real
-    assert frac >= 0.40, (
+    assert frac >= 0.50, (
         f"fi==dis_amp in too many realizations ({n_real - n_differ}/{n_real}); "
-        f"expected fi≠dis_amp in ≥40% — got {frac:.0%}")
+        f"expected fi≠dis_amp in ≥50% at nmax=3, mu_max=0.5 — got {frac:.0%}")
     print(f"  PASS: dis_amp_differs_from_fi_at_strong_disorder  "
-          f"(fi≠dis_amp in {n_differ}/{n_real} = {frac:.0%} of realizations)")
+          f"(fi≠dis_amp in {n_differ}/{n_real} = {frac:.0%} of realizations, nmax=3)")
 
 
-def test_zero_disorder_dis_amp_nondeterministic_but_valid():
-    """Under mu=0, dis_amp sites are arbitrary (all |mu|=0) but still valid k sites in [0,L-1]."""
+def test_zero_disorder_dis_amp_deterministic_and_valid():
+    """Under mu=0, dis_amp sites are NumPy-stable (argsort on all-zero array is
+    deterministic: ascending index order, so dis_amp=[-k:] gives [L-k..L-1],
+    dis_anti=[:k] gives [0..k-1]).  Either way, sites must be valid and non-duplicate."""
     mu_vec = np.zeros(L)
     res = bh.run_selector_sweep_realization(
         L, N, nmax, JU, mu_vec,
@@ -504,7 +513,7 @@ if __name__ == "__main__":
         test_dis_amp_dis_anti_disjoint,
         test_dis_amp_amp_geq_anti_mu,
         test_dis_amp_differs_from_fi_at_strong_disorder,
-        test_zero_disorder_dis_amp_nondeterministic_but_valid,
+        test_zero_disorder_dis_amp_deterministic_and_valid,
     ]
 
     passed, failed = 0, []

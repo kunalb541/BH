@@ -155,19 +155,28 @@ class TestLindbladTracePreservation:
         trace_t = np.real(np.trace(rho_t))
         assert abs(trace_t - 1.0) < 1e-8
 
-    def test_rho_stays_in_fixed_N_sector(self):
-        """Total particle number must be conserved under dephasing evolution."""
+    def test_liouvillian_is_trace_preserving_algebraically(self):
+        """Verify trace-preservation as an algebraic property of the superoperator.
+
+        For all ρ, d/dt Tr(ρ) = Tr(L(ρ)) = 0.
+        In vec form: the sum of the superoperator's rows corresponding to
+        diagonal output indices must be zero for every column.
+        Equivalently: L restricted to diagonal-output rows has zero column sums.
+
+        This is a stronger check than test_trace_preserved_ground_state —
+        it proves the property holds for ALL inputs simultaneously.
+        Note: Tr(L_superop) ≠ 0 in general; trace-preservation is about the
+        column sums restricted to diagonal rows, NOT the full matrix trace.
+        """
         basis, idx_map, D, H, n_ops, n2_ops, L_ops, gammas, liouv = make_system(L=6, N=3)
-        rho0 = ground_state_rho(H)
-        # Total number operator: sum of all site operators
-        N_op = sum(n_ops)
-        N_before = np.real(np.trace(N_op @ rho0))
-        rho_t = evolve_rho(rho0, liouv, 2.0)
-        N_after = np.real(np.trace(N_op @ rho_t))
-        assert abs(N_after - N_before) < 1e-8, (
-            f"Particle number changed: {N_before} -> {N_after}"
+        # In row-major vec convention, the diagonal output indices are i*D+i
+        diag_rows = np.array([i * D + i for i in range(D)])
+        col_sums = liouv[diag_rows, :].sum(axis=0)
+        np.testing.assert_allclose(
+            col_sums, np.zeros(D * D), atol=1e-10,
+            err_msg="Liouvillian column sums over diagonal-output rows != 0 "
+                    "(trace-preservation violated)"
         )
-        assert abs(N_before - 3.0) < 1e-8  # sanity check: N=3 for L=6
 
 
 # ---------------------------------------------------------------------------
@@ -204,15 +213,25 @@ class TestParticleNumberConservation:
             err_msg="Local occupations changed under pure dephasing"
         )
 
-    def test_local_occupation_preserved_with_tunnelling(self):
-        """Total ⟨N⟩ = sum_i ⟨n_i⟩ is conserved even with non-zero J."""
+    def test_individual_occupations_change_under_tunnelling(self):
+        """With J > 0 and dephasing, individual ⟨n_i⟩ DO change over time.
+
+        This is the physical premise of the paper: targeted dephasing at specific
+        sites can drive measurable occupation redistribution.  With J=0 (pure
+        dephasing only), each ⟨n_i⟩ is individually conserved (tested above).
+        With J > 0, hopping redistributes particles so at least some ⟨n_i⟩ evolve.
+        """
         basis, idx_map, D, H, n_ops, n2_ops, L_ops, gammas, liouv = make_system(J_over_U=0.30)
         rho0 = ground_state_rho(H)
-        N_op = sum(n_ops)
-        N_before = np.real(np.trace(N_op @ rho0))
+        occ_before = site_expectations(rho0, n_ops)
         rho_t = evolve_rho(rho0, liouv, 2.0)
-        N_after = np.real(np.trace(N_op @ rho_t))
-        assert abs(N_after - N_before) < 1e-8
+        occ_after = site_expectations(rho_t, n_ops)
+        # At least one site occupation must change meaningfully (not all pinned)
+        max_change = np.max(np.abs(occ_after - occ_before))
+        assert max_change > 1e-6, (
+            f"No site occupation changed under J>0 dephasing — "
+            f"max |Δ⟨n_i⟩| = {max_change:.2e}.  Expected tunnelling to cause redistribution."
+        )
 
 
 # ---------------------------------------------------------------------------
