@@ -29,6 +29,7 @@ Scientific invariants
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import itertools
 import json
 import multiprocessing as mp
@@ -985,12 +986,21 @@ def run_disorder_experiment(cfg, disorder_strengths, n_realizations,
     new_cache = {}
     if pending_args:
         n_w = min(n_workers, len(pending_args))
-        ctx = mp.get_context("spawn")
-        with ctx.Pool(n_w, initializer=_worker_init) as pool:
-            for L_, N_, ju_, mu_max_, r_, res in tqdm(
-                    pool.imap_unordered(_disorder_worker, pending_args),
-                    total=len(pending_args), desc="Disorder realizations", ncols=80):
-                new_cache[(L_, N_, ju_, mu_max_, r_)] = res
+        _ctx = mp.get_context("spawn")
+        with concurrent.futures.ProcessPoolExecutor(
+                max_workers=n_w, mp_context=_ctx,
+                initializer=_worker_init) as _pool:
+            _futs = {_pool.submit(_disorder_worker, arg): i
+                     for i, arg in enumerate(pending_args)}
+            with tqdm(total=len(pending_args), desc="Disorder realizations",
+                      ncols=80) as _pbar:
+                for _fut in concurrent.futures.as_completed(_futs):
+                    try:
+                        L_, N_, ju_, mu_max_, r_, res = _fut.result()
+                        new_cache[(L_, N_, ju_, mu_max_, r_)] = res
+                    except Exception as _e:
+                        print(f"\n[WARN] disorder worker error: {_e}", flush=True)
+                    _pbar.update(1)
 
     # Reassemble in deterministic order
     all_dis = []
@@ -1444,12 +1454,21 @@ def run_shell_perm_experiment(cfg, disorder_strengths, n_realizations,
     new_cache = {}
     if pending_args:
         n_w = min(n_workers, len(pending_args))
-        ctx = mp.get_context("spawn")
-        with ctx.Pool(n_w, initializer=_worker_init) as pool:
-            for L_, N_, ju_, mu_max_, r_, res in tqdm(
-                    pool.imap_unordered(_shell_perm_worker, pending_args),
-                    total=len(pending_args), desc="Shell-perm realizations", ncols=80):
-                new_cache[(L_, N_, ju_, mu_max_, r_)] = res
+        _ctx = mp.get_context("spawn")
+        with concurrent.futures.ProcessPoolExecutor(
+                max_workers=n_w, mp_context=_ctx,
+                initializer=_worker_init) as _pool:
+            _futs = {_pool.submit(_shell_perm_worker, arg): i
+                     for i, arg in enumerate(pending_args)}
+            with tqdm(total=len(pending_args), desc="Shell-perm realizations",
+                      ncols=80) as _pbar:
+                for _fut in concurrent.futures.as_completed(_futs):
+                    try:
+                        L_, N_, ju_, mu_max_, r_, res = _fut.result()
+                        new_cache[(L_, N_, ju_, mu_max_, r_)] = res
+                    except Exception as _e:
+                        print(f"\n[WARN] shell-perm worker error: {_e}", flush=True)
+                    _pbar.update(1)
 
     all_sp = []
     for L in cfg["L_LIST"]:
@@ -1832,14 +1851,23 @@ def run_selector_sweep_experiment(cfg, disorder_strengths, n_realizations,
 
     new_cache = {}
     if pending:
-        ctx = mp.get_context("spawn")
-        with ctx.Pool(min(n_workers, len(pending)), initializer=_worker_init) as pool:
-            for out in tqdm(pool.imap_unordered(_sel_worker, pending),
-                            total=len(pending), desc="Selector-sweep realizations",
-                            ncols=90):
-                if out is not None:
-                    L_, N_, ju_, mu_, r_, res = out
-                    new_cache[(L_, N_, ju_, mu_, r_)] = res
+        _ctx = mp.get_context("spawn")
+        with concurrent.futures.ProcessPoolExecutor(
+                max_workers=min(n_workers, len(pending)), mp_context=_ctx,
+                initializer=_worker_init) as _pool:
+            _futs = {_pool.submit(_sel_worker, arg): i
+                     for i, arg in enumerate(pending)}
+            with tqdm(total=len(pending), desc="Selector-sweep realizations",
+                      ncols=90) as _pbar:
+                for _fut in concurrent.futures.as_completed(_futs):
+                    try:
+                        out = _fut.result()
+                        if out is not None:
+                            L_, N_, ju_, mu_, r_, res = out
+                            new_cache[(L_, N_, ju_, mu_, r_)] = res
+                    except Exception as _e:
+                        print(f"\n[WARN] sel worker error: {_e}", flush=True)
+                    _pbar.update(1)
 
     all_sel = []
     for L in cfg["L_LIST"]:
@@ -2147,14 +2175,23 @@ def run_gamma_scan_experiment(cfg, gamma_extra_list, disorder_strengths,
 
     new_cache = {}
     if pending:
-        ctx = mp.get_context("spawn")
-        with ctx.Pool(min(n_workers, len(pending)), initializer=_worker_init) as pool:
-            for out in tqdm(pool.imap_unordered(_gscan_worker, pending),
-                            total=len(pending), desc="Gamma-scan realizations",
-                            ncols=90):
-                if out is not None:
-                    L_, N_, ju_, mu_, gx_, r_, res = out
-                    new_cache[(L_, N_, ju_, mu_, gx_, r_)] = res
+        _ctx = mp.get_context("spawn")
+        with concurrent.futures.ProcessPoolExecutor(
+                max_workers=min(n_workers, len(pending)), mp_context=_ctx,
+                initializer=_worker_init) as _pool:
+            _futs = {_pool.submit(_gscan_worker, arg): i
+                     for i, arg in enumerate(pending)}
+            with tqdm(total=len(pending), desc="Gamma-scan realizations",
+                      ncols=90) as _pbar:
+                for _fut in concurrent.futures.as_completed(_futs):
+                    try:
+                        out = _fut.result()
+                        if out is not None:
+                            L_, N_, ju_, mu_, gx_, r_, res = out
+                            new_cache[(L_, N_, ju_, mu_, gx_, r_)] = res
+                    except Exception as _e:
+                        print(f"\n[WARN] gscan worker error: {_e}", flush=True)
+                    _pbar.update(1)
 
     all_gs = []
     for L in cfg["L_LIST"]:
