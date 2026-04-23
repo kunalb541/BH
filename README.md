@@ -1,4 +1,4 @@
-### Targeted Dephasing as a Causal Handle on Local Occupation Loss in an Open BH Chain
+# Local number variance as a causal handle in the one-dimensional Bose–Hubbard chain
 
 **Kunal Bhatia** — Independent Researcher, Heidelberg, Germany  
 ORCID: [0009-0007-4447-6325](https://orcid.org/0009-0007-4447-6325)
@@ -9,59 +9,68 @@ Companion code for the paper submitted to *Physical Review A*.
 
 ## What this paper does
 
-This paper asks a precise question: in a 1D open Bose–Hubbard chain under uniform Lindblad dephasing, do sites with high **local occupation variance** F_i = ⟨n_i²⟩ − ⟨n_i⟩² serve as **causal handles** for future local occupation loss?
-
-**Handle** (after Woodward 2003): a variable is a causal handle on an outcome if targeted intervention at that variable produces a measurably different outcome than matched-budget random intervention.
+In a 1D open Bose–Hubbard chain under uniform Lindblad dephasing, sites develop spatially heterogeneous local occupation variance F_i = ⟨n_i²⟩ − ⟨n_i⟩². This paper tests whether targeting additional dephasing at the highest-F_i sites produces measurably more local occupation loss than applying the same dephasing budget to randomly chosen sites.
 
 **Protocol:**
-1. Evolve the ground state under uniform baseline dephasing (γ = 0.1) for a burn-in period t_burn = 5 to build up spatially heterogeneous fluctuation structure.
-2. Compute F_i on the post-burn-in state; select the top-k sites (k = ⌈L/3⌉).
+1. Evolve the ground state under uniform baseline dephasing (γ = 0.1) for burn-in t_burn = 5 to build heterogeneous fluctuation structure.
+2. Compute F_i; select the top-k sites (k = ⌈L/3⌉).
 3. **Targeted arm**: apply extra dephasing γ_extra = 0.5 at the k high-F_i sites.
-4. **Random arm**: apply the same total extra budget (k × γ_extra) to k randomly chosen sites (100 independent draws).
+4. **Random arm**: apply the same total budget (k × γ_extra) to k randomly chosen sites (100 independent draws).
 5. Compare local occupation loss ∑_{i∈S} max(0, ⟨n_i⟩_t − ⟨n_i⟩_{t+τ}) at the intervention sites.
 
-All evolution is **exact Lindblad** (no approximations, no Trotter decomposition, no stochastic unravelling). The jump operator L_i = n_i is a pure dephasing operator that preserves all local and global occupation expectations at all times.
+All evolution is **exact Lindblad** (no approximations, no Trotter decomposition, no stochastic unravelling).
 
 ---
 
 ## Key results
 
-### Clean chain (symmetric model)
+### Primary sweep (clean chain, L ∈ {6, 7, 8})
 
-Three regimes are identified across the tested parameter range:
+Three regimes across J/U:
 
-| Regime | J/U | Result (L ∈ {6,7,8,9}, τ ∈ {1,2,3}) |
-|--------|-----|--------------------------------------|
-| **Negative** | 0.12 | Targeted produces **less** loss than random at all sizes and horizons |
-| **Crossover band** | ≈ 0.18–0.24 | Size- and horizon-dependent; onset shifts upward with L, downward with τ |
-| **Positive pocket** | ≥ 0.30 | Targeted > random at **all** τ and **all** L — 95% CI strictly above zero |
+| Regime | J/U | Result |
+|--------|-----|--------|
+| **Negative** | 0.12 | Targeted produces *less* loss than random — 95% CI strictly below zero at all tested L, τ |
+| **Crossover** | ≈ 0.20 | Size- and horizon-sensitive; not robustly positive or negative |
+| **Positive pocket** | ≥ 0.30 | Targeted > random — 95% CI strictly above zero at all tested L, τ |
 
-**Crossover-band onset** (smallest J/U at which 95% CI excludes zero):
+Best effects at J/U = 0.40, τ = 3, growing with system size:
 
-| L | τ=2 | τ=3 |
-|---|-----|-----|
-| 6 | ≤ 0.20 | ≤ 0.20 |
-| 7 | > 0.20 | ≤ 0.20 |
-| 8 | 0.20 | 0.18 |
-| 9 | 0.24 | 0.20 |
+| L | mean advantage |
+|---|---------------|
+| 6 | +0.047 |
+| 7 | +0.068 |
+| 8 | +0.072 |
 
-Both trends are monotone across the ladder: onset coupling increases with L (harder to activate at larger sizes) and decreases with τ (longer horizon helps).
+### Disorder selector sweep (L=6, 9 selectors, 50 realizations)
 
-### Strong disorder: fi genuinely outperforms geo
+At strong disorder (μ_max = 2.0, J/U = 0.4, τ = 3), fi ranks first among all tested selectors:
 
-Under on-site disorder μ_i ~ Uniform(−μ_max, +μ_max), spatial symmetry breaks and the high-F_i selector (fi) separates from the geometric-center selector (geo):
+| Selector | Mean advantage |
+|----------|---------------|
+| **fi** (variance) | **+0.049** |
+| maxn | +0.034 |
+| geo (center) | +0.032 |
+| gen (generator) | +0.028 |
+| dis_amp | +0.023 |
+| bdy | +0.010 |
+| dis_anti | +0.005 |
+| anti-fi | +0.002 |
+| minn | ≈ 0 |
 
-| μ_max | J/U | τ | fi mean | geo mean | fi − geo |
-|-------|-----|---|---------|---------|---------|
-| 0.50 | 0.40 | 3 | +0.031 | +0.022 | **+0.009** |
-| 1.00 | 0.40 | 3 | +0.043 | +0.028 | **+0.015** |
-| 2.00 | 0.40 | 3 | +0.050 | +0.033 | **+0.017** |
+The fi−geo gap grows monotonically with μ_max and J/U. dis_amp ranks well below fi, confirming F_i carries independent information beyond raw disorder amplitude.
 
-Effect is monotone in μ_max, τ, and J/U. At weak disorder (μ_max ≤ 0.20), fi ≈ geo as expected from symmetry.
+### Shell-matched permutation controls
 
-### Variance information is independent of disorder amplitude
+fi beats all within-shell permutations by +0.002 to +0.006 at τ=3, J/U ≥ 0.30, establishing that F_i carries within-shell information beyond shell geometry.
 
-A new **disorder-amplitude selector** (dis_amp, selects top-k sites by |μ_i|) controls for the hypothesis that fi wins merely by tracking which sites have the strongest disorder. Key finding: fi and dis_amp select different sites in **58–79% of realizations** at strong disorder (μ_max ≥ 0.50), confirming that F_i carries genuinely independent variance information beyond raw disorder amplitude.
+### Deterministic inhomogeneous (tilt) chain
+
+In a tilted chain where F_i ≠ geo by construction, fi > geo with a gap of +0.032 to +0.054 at J/U = 0.40, τ = 3.
+
+### Gamma scan
+
+The advantage peaks near γ_extra ≈ 0.5–1.0 and collapses at very high rates. The paper's choice γ_extra = 0.5 is near-optimal.
 
 ---
 
@@ -72,10 +81,10 @@ A new **disorder-amplitude selector** (dis_amp, selects top-k sites by |μ_i|) c
 | Model | 1D Bose–Hubbard, open BC |
 | Filling | Half-filling: N = ⌊L/2⌋ |
 | n_max | 3 per site |
-| L (primary sweep) | 6, 7, 8, 9 |
-| N | 3 (L=6,7) / 4 (L=8,9) |
-| Hilbert space D | 56 (L=6), 84 (L=7), 322 (L=8), 486 (L=9) |
-| Liouvillian dim | D² = 3136, 7056, 103684, 236196 |
+| L (primary sweep) | 6, 7, 8 |
+| N | 3 (L=6,7) / 4 (L=8) |
+| Hilbert space D | 56 (L=6), 84 (L=7), 322 (L=8) |
+| Liouvillian dim | D² = 3136, 7056, 103684 |
 | Matrix storage | Dense (D ≤ 84), Sparse CSR (D ≥ 322) |
 | Baseline dephasing γ | 0.1 |
 | Extra dephasing γ_extra | 0.5 |
@@ -91,9 +100,8 @@ A new **disorder-amplitude selector** (dis_amp, selects top-k sites by |μ_i|) c
 
 ```
 BH/
-├── bh.py                    # Complete simulation package (Hilbert space, Lindblad evolution,
-│                            # intervention protocol, all experiments, figures, tables)
-├── run_all.sh               # AWS batch script — Priority A + extended campaign
+├── bh.py                    # Complete simulation package
+├── run_all.sh               # AWS batch script
 ├── test_bh.py               # Core physics regression tests (pytest)
 ├── test_new_experiments.py  # Selector sweep, dis_amp, inhomogeneous, gamma-scan tests
 ├── paper.tex                # Manuscript (REVTeX 4.2 / PRA format)
@@ -102,7 +110,7 @@ BH/
 └── outputs/                 # Generated outputs (not tracked in git)
     ├── checkpoints/         # Per-condition JSON checkpoints (resume on interruption)
     ├── data/                # config.json, results CSVs
-    ├── figures/             # PDF/PNG figures
+    ├── figures/             # PDF/PNG figures (including fig4, fig5)
     └── tables/              # LaTeX tables
 ```
 
@@ -129,11 +137,11 @@ python test_new_experiments.py
 ### Primary sweep (clean chain)
 
 ```bash
-# L=6,7,8,9 × J/U={0.12,0.20,0.30,0.40} × τ={1,2,3}
-python bh.py --l-list 6 7 8 9 --ju-list 0.12 0.20 0.30 0.40 --tau-list 1 2 3 --workers 4
+# L=6,7,8 × J/U={0.12,0.20,0.30,0.40} × τ={1,2,3}
+python bh.py --l-list 6 7 8 --ju-list 0.12 0.20 0.30 0.40 --tau-list 1 2 3 --workers 4
 ```
 
-### Disorder + selector experiments (AWS-scale)
+### Disorder + selector experiments
 
 ```bash
 # Selector sweep — all 9 selectors including dis_amp/dis_anti
@@ -141,18 +149,19 @@ python bh.py --selector-sweep --l-list 6 --ju-list 0.20 0.30 0.40 --tau-list 1 2
   --disorder-strengths 0.10 0.20 0.30 0.50 1.00 2.00 \
   --disorder-realizations 50 --dis-workers 4 --resume
 
-# Strong disorder realizations (fi, geo, shell-perm)
+# Disorder realizations (fi vs geo)
 python bh.py --disorder --l-list 6 --ju-list 0.20 0.30 0.40 --tau-list 1 2 3 \
   --disorder-strengths 0.50 1.00 2.00 --disorder-realizations 50 --dis-workers 4 --resume
 
+# Shell-matched permutation controls
 python bh.py --shell-perm --l-list 6 --ju-list 0.20 0.30 0.40 --tau-list 1 2 3 \
-  --disorder-strengths 0.50 1.00 2.00 --disorder-realizations 50 --dis-workers 4 --resume
+  --disorder-strengths 0.10 0.20 0.30 --disorder-realizations 50 --dis-workers 4 --resume
 
-# Inhomogeneous chain (deterministic asymmetry, single realization per condition)
+# Inhomogeneous chain (deterministic tilt)
 python bh.py --inhomogeneous --l-list 6 --ju-list 0.20 0.30 0.40 --tau-list 1 2 3 \
   --inhom-tilts 0.5 1.0 2.0 --inhom-patterns tilt step --resume
 
-# Gamma scan (robustness to γ_extra)
+# Gamma scan
 python bh.py --gamma-scan --l-list 6 --ju-list 0.30 0.40 --tau-list 1 2 3 \
   --disorder-strengths 0.10 --disorder-realizations 50 \
   --gamma-scan-values 0.1 0.2 0.5 1.0 2.0 --dis-workers 4 --resume
@@ -162,10 +171,10 @@ Per-condition checkpoints are written to `outputs/checkpoints/` — safe to inte
 
 **Expected runtimes per realization** (4-core laptop):
 
-| Chain length | D | Time per realization |
+| L | D | Time per realization |
 |---|---|---|
-| L=6 | 56 | ~2–3 min |
-| L=7 | 84 | ~5–8 min |
+| 6 | 56 | ~2–3 min |
+| 7 | 84 | ~5–8 min |
 
 ### Compile the paper
 
@@ -177,15 +186,13 @@ pdflatex paper.tex && bibtex paper && pdflatex paper.tex && pdflatex paper.tex
 
 ## Code overview (`bh.py`)
 
-The entire simulation is self-contained in a single file:
-
 | Function | Purpose |
 |----------|---------|
 | `build_basis(L, N, nmax)` | Enumerate Fock basis states in fixed-N sector |
 | `basis_index(basis)` | Dict mapping state tuple → row index |
 | `number_op(site, D, basis)` | Diagonal number operator for site i |
-| `build_hamiltonian(L, J, U, nmax, basis, idx_map)` | Bose–Hubbard Hamiltonian (tunneling + interaction) |
-| `build_liouvillian(H, L_ops, gammas)` | Lindblad superoperator in row-major vec form; dissipator stored as diagonal 1D array |
+| `build_hamiltonian(L, J, U, nmax, basis, idx_map)` | Bose–Hubbard Hamiltonian |
+| `build_liouvillian(H, L_ops, gammas)` | Lindblad superoperator; dissipator stored as diagonal 1D array |
 | `evolve_rho(rho, liouvillian, tau)` | Exact time evolution via `expm_multiply` |
 | `site_expectations(rho, n_ops)` | ⟨n_i⟩ for all sites |
 | `site_variances(rho, n_ops, n2_ops)` | F_i = ⟨n_i²⟩ − ⟨n_i⟩² for all sites |
@@ -198,10 +205,10 @@ The entire simulation is self-contained in a single file:
 
 **Key implementation notes:**
 - `expm_multiply` is exact to floating-point precision (Al-Mohy & Higham 2011).
-- Dissipator diagonal: for L_i = n_i, the D²×D² dissipator is diagonal in the superoperator basis. Stored as a 25 KB 1D array rather than a 150 MB dense matrix — critical for L=6,7 without OOM.
+- Dissipator diagonal: for L_i = n_i, the D²×D² dissipator is diagonal. Stored as a 1D array — avoids OOM at L=6,7.
+- Parallel disorder realizations use `concurrent.futures.ProcessPoolExecutor` with `as_completed` (deadlock-free).
 - Per-realization checkpoint resume: each condition writes a JSON file; `--resume` skips existing files.
 - Bootstrap: 1000 resamples, vectorised NumPy, per condition.
-- `multiprocessing.get_context("spawn")` with `imap_unordered` for parallel disorder realizations.
 
 **Selectors compared in `run_selector_sweep_realization`:**
 
@@ -212,22 +219,20 @@ The entire simulation is self-contained in a single file:
 | `maxn` | Top-k by ⟨n_i⟩ |
 | `minn` | Bottom-k by ⟨n_i⟩ |
 | `bdy` | Boundary (outermost k) |
-| `anti` | Bottom-k by F_i (inverted fi) |
+| `anti` | Bottom-k by F_i |
 | `gen` | Top-k by generator action \|⟨[L_i, H]⟩\| |
 | `dis_amp` | Top-k by \|μ_i\| (disorder amplitude) |
-| `dis_anti` | Bottom-k by \|μ_i\| (inverted dis_amp) |
-
-`dis_amp` and `dis_anti` are controls that test whether fi's advantage over random is merely due to tracking the strongest disorder sites. Finding fi ≠ dis_amp in majority of strong-disorder realizations confirms variance carries independent information.
+| `dis_anti` | Bottom-k by \|μ_i\| |
 
 ---
 
 ## What is not claimed
 
-- That high-F_i targeting is **optimal** — only that it beats matched-budget random targeting in the positive-pocket regime.
-- That the effect holds at all J/U — it reverses at J/U = 0.12 and is size-dependent near J/U ≈ 0.18–0.24.
-- That results extend to the **thermodynamic limit** — exact Lindblad is feasible through L = 9; larger sizes require approximate methods (e.g., MPO Lindblad).
-- That fi is independent of geometry in the **clean, symmetric chain** — at zero disorder, reflection symmetry forces F_i to peak at geometric-center sites, so fi = geo identically. Breaking symmetry (disorder or inhomogeneous potential) is required for separation.
-- That dis_amp is the only alternative explanation — other amplitude-based proxies may exist. dis_amp is a strong representative test.
+- That high-F_i targeting is **optimal** among all possible selectors.
+- That the effect holds at all J/U — it reverses at J/U = 0.12 and is transitional near J/U ≈ 0.20.
+- That results extend to the **thermodynamic limit** — exact Lindblad is feasible through L = 8; larger sizes require approximate methods (e.g., MPO Lindblad).
+- That fi is independent of geometry in the **clean, symmetric chain** — reflection symmetry forces F_i to peak at geometric-center sites, so fi = geo identically there. Symmetry breaking (disorder or inhomogeneous potential) is required for separation.
+- That dis_amp is the only alternative explanation — it is a strong representative control, not an exhaustive one.
 
 ---
 

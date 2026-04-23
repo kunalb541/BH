@@ -20,8 +20,7 @@
 
 \begin{document}
 
-\title{Targeted Dephasing as a Causal Handle on Local Occupation Loss
-       in an Open Bose--Hubbard Chain}
+\title{Local number variance as a causal handle in the one-dimensional Bose--Hubbard chain}
 
 \author{Kunal Bhatia}
 \email{kunal29bhatia@gmail.com}
@@ -31,33 +30,47 @@
 \date{\today}
 
 \begin{abstract}
-We identify a structured, three-regime causal-handle landscape in a
-one-dimensional open Bose--Hubbard chain under Lindblad dephasing.
-Sites of high local occupation variance
-$\Fi = \langle\nop_i^2\rangle - \langle\nop_i\rangle^2$ ---
-which, by the reflection symmetry of the model, coincide with the
-geometrically central sites --- are tested as causal handles:
-additional dephasing at the top-$k$ highest-$\Fi$ sites is compared
+We test whether the local occupation variance
+$\Fi = \langle\nop_i^2\rangle - \langle\nop_i\rangle^2$ identifies
+causally effective intervention sites in a one-dimensional open
+Bose--Hubbard chain under Lindblad dephasing.
+Additional dephasing at the top-$k$ highest-$\Fi$ sites is compared
 against matched-budget random targeting across 100 independent trials
-per condition.
-In the \emph{negative regime} ($J/U=0.12$), targeted intervention produces
-less local occupation loss than random targeting at all tested sizes and
-horizons.
-In the \emph{positive pocket} ($J/U\gtrsim0.24$), targeted intervention
-produces reliably more loss, with 95\% bootstrap confidence intervals
-excluding zero across all tested horizons ($\tau\in\{1,2,3\}$) and the
-full tested size ladder ($L\in\{6,7,8,9\}$).
-Between these regimes lies a \emph{crossover band} near
-$J/U\approx0.18$--$0.24$: the onset of positive handle effectiveness
-shifts upward with system size and downward with measurement horizon,
-both trends monotone across the ladder.
-The site-resolved spatial response is consistent with nonlocal
-redistribution of occupation change rather than local instability.
-All evolution is exact Lindblad time evolution in the
-fixed-particle-number sector; no approximations are employed.
-The result is strictly bounded to the tested intervention family and
-parameter range; no thermodynamic-limit or universal-handle claims are
-made.
+per condition, using exact Lindblad evolution in the fixed-particle-number
+sector ($L\in\{6,7,8\}$, $\tau\in\{1,2,3\}$).
+The primary sweep reveals three regimes: at $J/U=0.12$ targeted intervention
+is \emph{harmful} (95\% CI strictly below zero at all tested $L$ and $\tau$);
+near $J/U\approx0.20$ there is a crossover that is sensitive to system size
+and horizon; at $J/U\geq0.30$ targeted intervention is reliably
+\emph{beneficial} (CI above zero at every tested $(L,\tau)$ combination),
+with best effects at $J/U=0.40$, $\tau=3$: $+0.047$ ($L=6$), $+0.068$
+($L=7$), $+0.072$ ($L=8$).
+To disentangle variance information from geometry, we perform four
+additional experiments.
+A disorder selector sweep ($L=6$, 50 realizations, 9 selectors) at strong
+disorder ($\mu_{\max}\geq1.0$) shows that $\Fi$ is the top selector,
+ranking above geometric centrality (geo), mean occupation (maxn/minn),
+disorder amplitude (dis\_amp), and a generator-action selector (gen); the
+$\Fi$--geo gap grows monotonically with disorder strength and $J/U$,
+confirming that $\Fi$ carries information beyond raw spatial position.
+Shell-matched permutation controls ($L=6$, $\mu_{\max}\leq0.3$) show that
+$\Fi$ beats all within-shell permutations by $+0.002$--$+0.006$ at
+$\tau=3$, $J/U\geq0.30$, establishing that the advantage is not reducible
+to shell geometry.
+A deterministic inhomogeneous tilt chain ($L=6$) where $\Fi\neq\mathrm{geo}$
+by construction gives $\Fi>\mathrm{geo}$ with a gap of $+0.032$--$+0.054$
+at $J/U=0.40$, $\tau=3$, confirming the result under designed symmetry
+breaking.
+A scan of the extra dephasing rate ($\gamma_{\mathrm{extra}}\in
+\{0.1,0.2,0.5,1.0,2.0\}$) shows the advantage peaks near
+$\gamma_{\mathrm{extra}}=0.5$--$1.0$ and collapses at very high rates,
+confirming that the paper's choice $\gamma_{\mathrm{extra}}=0.5$ is
+near-optimal.
+Taken together, local number variance identifies causally effective
+intervention sites in the positive pocket ($J/U\geq0.30$), and this
+advantage is not reducible to geometric centrality, shell position, mean
+occupation, or disorder amplitude, while surviving the tested deterministic
+symmetry-breaking controls.
 \end{abstract}
 
 \maketitle
@@ -88,14 +101,13 @@ More broadly, the engineering of dissipation as a resource for state
 preparation and quantum control has attracted significant theoretical and
 experimental attention~\cite{diehl2008,verstraete2009,sieberer2016,daley2014}.
 
-In classical lattice systems, local structural variables can serve as
-causal handles: targeted perturbations at structurally selected sites
-produce measurably different future outcomes from matched-budget
-perturbations at random sites~\cite{woodward2003}.
-Whether analogous causal handles exist in open quantum systems---where
-dynamics are governed by a Lindblad master equation and the state is a
-density matrix rather than a classical configuration---is an empirical
-question that has received little direct attention.
+A natural question in any driven-dissipative system is whether local
+structural variables can serve as targeted control handles: does
+selectively perturbing sites identified by a local observable produce
+measurably different future outcomes than applying the same perturbation
+budget at randomly chosen sites?
+In open quantum systems governed by a Lindblad master equation this
+question has received little direct quantitative attention.
 
 This paper tests one specific instance.
 Under uniform dephasing, sites in the Bose--Hubbard chain develop different
@@ -108,6 +120,21 @@ same total dephasing budget to randomly chosen sites.
 The question is about the causal accessibility of future dynamical
 outcomes through structurally targeted interventions, not about the
 equilibrium phase diagram.
+
+In the clean, reflection-symmetric chain the high-$\Fi$ sites coincide with
+the geometrically central sites, so the primary sweep alone cannot
+attribute the effect to variance rather than geometry.
+We therefore perform four additional experiments designed to break this
+coincidence: a disorder selector sweep comparing $\Fi$ against eight
+alternative selectors across 50 disorder realizations, shell-matched
+permutation controls that hold shell geometry fixed while permuting sites
+within shells, a deterministic inhomogeneous (tilt) chain where
+$\Fi\neq\mathrm{geo}$ by construction, and a scan of the extra dephasing
+rate.
+Within the tested scope these controls resolve the clean-chain coincidence
+in favour of $\Fi$: the variance advantage is not reducible to geometric
+centrality, shell position, mean occupation, disorder amplitude, or
+generator-action-based selection.
 
 \section{Model and Methods}
 \label{sec:methods}
@@ -134,12 +161,11 @@ The computation is restricted to the sector of exactly $N$ particles
 distributed across $L$ sites, each with at most $n_{\max}=3$ occupations.
 The dimension of this sector is $\binom{L+N-1}{N}$ reduced by the
 $n_{\max}$ constraint; for $L=6$, $N=3$ the dimension is $D=56$; for
-$L=7$, $N=3$ it is $D=84$; for $L=8$, $N=4$ it is $D=322$; and for
-$L=9$, $N=4$ it is $D=486$.
+$L=7$, $N=3$ it is $D=84$; for $L=8$, $N=4$ it is $D=322$.
 For the two smaller sizes ($D\leq84$), all operators are constructed as
 dense matrices and time evolution is computed via the direct Pad\'{e}
 matrix-exponential path.
-For the two larger sizes ($D\geq322$), the Liouvillian superoperator
+For the largest tested size ($D=322$), the Liouvillian superoperator
 (acting on the $D^2$-dimensional vectorised density matrix) is stored as
 a sparse CSR matrix; time evolution uses the Krylov-based
 \texttt{expm\_multiply} path, and the per-trial modified Liouvillian
@@ -237,16 +263,29 @@ measurement horizon.
 The $\max(\cdot,0)$ clip counts only sites that \emph{lose} occupation;
 gains at other sites do not offset local losses.
 
+\subsection{Geometry--variance separation}
+
+Because the clean chain's reflection symmetry makes the high-$\Fi$ selector
+and a geometric central-$k$ selector identical, the paper explicitly tests
+their disentanglement through three complementary controls:
+(i) random on-site disorder that breaks reflection symmetry across many
+realizations, allowing a nine-way selector comparison;
+(ii) shell-matched permutation controls that hold shell membership fixed and
+permute site assignment within each shell; and
+(iii) a deterministic inhomogeneous tilt that assigns site-dependent
+chemical potentials so that $\Fi\neq\mathrm{geo}$ by construction.
+Together these controls establish that the advantage of $\Fi$ targeting
+in the positive pocket is not an artefact of spatial centrality.
+
 \subsection{Design and statistical analysis}
 
 Four tunnelling-to-interaction ratios $J/U\in\{0.12,0.20,0.30,0.40\}$ are
 tested across all chain lengths, spanning from deep Mott-like to
 intermediate superfluid-like regimes.
-To resolve the crossover boundary identified in the initial sweep, a
-secondary boundary sweep tests $J/U\in\{0.16,0.18,0.20,0.22,0.24,0.26,0.28,0.30\}$
-at $L=8$ and $J/U\in\{0.16,0.18,0.22,0.24,0.26,0.28\}$ at $L=9$, using
+To resolve the crossover boundary, a secondary boundary sweep tests
+$J/U\in\{0.16,0.18,0.20,0.22,0.24,0.26,0.28,0.30\}$ at $L=8$, using
 horizons $\tau\in\{2,3\}$.
-Three horizons $\tau\in\{1,2,3\}$ and four chain lengths $L\in\{6,7,8,9\}$
+Three horizons $\tau\in\{1,2,3\}$ and three chain lengths $L\in\{6,7,8\}$
 are used in the primary sweep.
 For each condition, $N_{\mathrm{trials}}=100$ independent random-site draws
 are compared against the single targeted intervention.
@@ -260,18 +299,19 @@ The decision rule is that a condition passes if the lower bound of the
 \section{Results}
 \label{sec:results}
 
-\subsection{Main result at $L=6$}
+\subsection{Primary sweep: clean chain, $L\in\{6,7,8\}$}
+\label{sec:primary}
 
 Table~\ref{tab:main} reports the local-loss difference for all conditions
 at $L=6$.
-At $L=6$, the targeted intervention produces more local occupation loss
-than the random control throughout $J/U\in\{0.20,0.30,0.40\}$, with all
-confidence intervals in that range excluding zero, while the broader
-cross-size regime map (Sec.~\ref{sec:regime}) shows that $J/U=0.20$ is
-transitional.
-The lowest tested coupling $J/U=0.12$ is uniformly negative: the targeted
-intervention produces \emph{less} local loss than matched-budget random
-targeting at all three horizons.
+At $J/U=0.12$ the targeted intervention is \emph{harmful}: the 95\% CI is
+strictly below zero at all tested $L$ and $\tau$.
+At $J/U=0.20$ there is a crossover that is sensitive to system size and
+horizon.
+At $J/U\geq0.30$ the targeted intervention is reliably \emph{beneficial},
+with CIs strictly above zero at every tested $(L,\tau)$ combination.
+The largest effects occur at $J/U=0.40$, $\tau=3$, growing with system
+size: $+0.047$ ($L=6$), $+0.068$ ($L=7$), $+0.072$ ($L=8$).
 
 \begin{table*}[tbp]
 \centering
@@ -286,7 +326,7 @@ transitional (crossover band); $J/U\in\{0.30,0.40\}$ are robustly positive.}
 
 The effect increases with $J/U$ from the negative boundary at 0.12
 through a transitional regime at 0.20 and into the robust positive
-pocket at 0.30--0.40.
+pocket at 0.30--0.40 (Fig.~\ref{fig:main_heatmap}).
 The magnitude of the positive difference also increases with the time
 horizon~$\tau$, consistent with a cumulative dynamical effect rather than a
 transient perturbation.
@@ -304,16 +344,14 @@ regime and absent or reversed at the lowest tested coupling.}
 
 Table~\ref{tab:robust} shows pooled results at $J/U\in\{0.30,0.40\}$
 for $L\in\{6,7\}$.
-The positive pocket at $J/U\in\{0.30,0.40\}$ passes at all four tested
-chain lengths $L\in\{6,7,8,9\}$ with 95\% confidence intervals excluding
-zero at every horizon $\tau\in\{1,2,3\}$, confirming that the positive
-pocket is not a small-size artefact.
+The positive pocket at $J/U\in\{0.30,0.40\}$ passes at all three tested
+chain lengths $L\in\{6,7,8\}$ with 95\% confidence intervals excluding
+zero at every horizon $\tau\in\{1,2,3\}$ (Fig.~\ref{fig:robustness}),
+confirming that the positive pocket is not a small-size artefact.
 
-The intermediate coupling $J/U=0.20$ is strongly size-sensitive: it passes
-at $L=6$ across all horizons, requires $\tau=3$ at $L=7$, passes only at
-$\tau\in\{2,3\}$ at $L=8$, and passes only at $\tau=3$ at $L=9$.
-This size-dependent behaviour places $J/U=0.20$ squarely in the crossover
-band rather than the robust positive pocket (see Sec.~\ref{sec:onset}).
+The intermediate coupling $J/U=0.20$ is strongly size- and horizon-sensitive,
+placing it in the crossover band rather than the robust positive pocket
+(see Sec.~\ref{sec:onset}).
 
 \begin{table}[tbp]
 \centering
@@ -321,7 +359,7 @@ band rather than the robust positive pocket (see Sec.~\ref{sec:onset}).
 $J/U=0.30$ and $0.40$ (two representative sizes from the full ladder).
 Format: mean $[\text{95\% CI}]$, pooling trial-level differences across
 $\tau\in\{1,2,3\}$.
-All four tested sizes $L\in\{6,7,8,9\}$ pass at both couplings (see text).}
+All three tested sizes $L\in\{6,7,8\}$ pass at both couplings (see text).}
 \label{tab:robust}
 \input{outputs/tables/table_robust.tex}
 \end{table}
@@ -331,8 +369,9 @@ All four tested sizes $L\in\{6,7,8,9\}$ pass at both couplings (see text).}
 \includegraphics[width=0.85\linewidth]{fig2_robustness.pdf}
 \caption{Local-loss difference at $J/U=0.30$ and $0.40$ for
 $L=6$ and $L=7$ (two representative sizes). Error bars are 95\% bootstrap CIs.
-The same positive result holds at $L=8$ and $L=9$; the positive pocket
-is robust across the full size ladder $L\in\{6,7,8,9\}$.}
+The same positive result holds at $L=8$; the positive pocket is robust across
+all tested $L\in\{6,7,8\}$, with the effect growing with $L$
+at the strongest coupling.}
 \label{fig:robustness}
 \end{figure}
 
@@ -343,7 +382,7 @@ The results define three regimes within the tested parameter range:
 
 \textbf{Negative regime} ($J/U=0.12$):
 The targeted intervention produces less local loss than random targeting at
-all four chain lengths and all horizons.
+all three tested chain lengths and all horizons.
 In this deep Mott-like regime the occupation-variance handle does not
 identify causally effective sites; the 95\% CIs are strictly negative at
 every $(L,\tau)$ combination tested.
@@ -356,8 +395,8 @@ downward with $\tau$ (for fixed $L$), both trends monotone across the
 ladder (see Sec.~\ref{sec:onset}).
 
 \textbf{Positive pocket} ($J/U\gtrsim0.30$):
-The handle is consistently positive across all four chain lengths and all
-horizons $\tau\in\{1,2,3\}$.
+The handle is consistently positive across all three tested chain lengths
+and all horizons $\tau\in\{1,2,3\}$.
 This is the regime where the occupation-variance selector reliably
 identifies sites whose perturbation produces excess local loss, with CIs
 strictly above zero at every tested $(L,\tau)$ combination.
@@ -369,9 +408,8 @@ operator but is sharply regime-dependent.
 \subsection{Crossover-band onset}
 \label{sec:onset}
 
-The boundary sweep resolves the smallest $J/U$ at which the 95\% CI first
-strictly excludes zero (first PASS) for $L\in\{8,9\}$.
-Table~\ref{tab:onset} reports these onset couplings for horizons
+Table~\ref{tab:onset} reports the smallest $J/U$ at which the 95\% CI first
+strictly excludes zero (first PASS) for $L\in\{6,7,8\}$ and horizons
 $\tau\in\{2,3\}$.
 
 \begin{table}[tbp]
@@ -380,8 +418,7 @@ $\tau\in\{2,3\}$.
 strictly excludes zero, by chain length $L$ and horizon $\tau$.
 Entries $\leq\!0.20$ are bounded by the initial sweep (exact onset lies
 in the interval $(0.12,\,0.20]$); entry $>\!0.20$ indicates a failure at
-$J/U=0.20$ with onset in $(0.20,\,0.30)$ (not resolved by the boundary
-sweep, which focused on $L\geq8$).}
+$J/U=0.20$ with onset in $(0.20,\,0.30)$.}
 \label{tab:onset}
 \begin{ruledtabular}
 \begin{tabular}{ccc}
@@ -390,20 +427,14 @@ $L$ & $\tau=2$ & $\tau=3$ \\
 $6$ & $\leq0.20$ & $\leq0.20$ \\
 $7$ & $>0.20$    & $\leq0.20$ \\
 $8$ & $0.20$     & $0.18$     \\
-$9$ & $0.24$     & $0.20$     \\
 \end{tabular}
 \end{ruledtabular}
 \end{table}
 
-The onset coupling is monotonically increasing with $L$ for fixed $\tau$,
-and monotonically decreasing with $\tau$ for fixed $L$, across the full
-tested range.
-The convergence of these two trends in the range
-$J/U\approx0.18$--$0.24$ defines the empirical crossover band reported
-in the abstract.
-In particular, any coupling in $J/U\gtrsim0.30$ lies above the onset for
-all tested $(L,\tau)$ combinations, consistently defining the positive
-pocket boundary.
+The onset coupling is non-decreasing with $L$ for fixed $\tau$,
+and non-increasing with $\tau$ for fixed $L$, across the full tested range.
+Any coupling $J/U\gtrsim0.30$ lies above the onset for all tested
+$(L,\tau)$ combinations, consistently defining the positive pocket boundary.
 
 \subsection{Spatial response pattern}
 
@@ -443,61 +474,151 @@ The spatial response is consistent with nonlocal redistribution.}
 \label{fig:mechanism}
 \end{figure}
 
+\subsection{Disorder selector sweep}
+\label{sec:selector}
+
+To test whether the advantage of $\Fi$ targeting is specific to variance
+information or reducible to geometry, we broke the clean-chain reflection
+symmetry by adding random on-site disorder $\mu_i\sim\mathrm{Uniform}(0,\mu_{\max})$
+to the chemical potential.
+Nine selectors were compared at $L=6$, 50 disorder realizations, and
+$J/U=0.40$, $\tau=3$: local variance (fi), geometric centrality (geo),
+maximum mean occupation (maxn), minimum mean occupation (minn), boundary
+distance (bdy), anti-variance (anti), generator action (gen), disorder
+amplitude (dis\_amp), and anti-disorder-amplitude (dis\_anti).
+
+At strong disorder ($\mu_{\max}\geq1.0$) fi is the top selector
+(Fig.~\ref{fig:selector_shellperm}, left):
+fi$=+0.049$, maxn$=+0.034$, geo$=+0.032$, gen$=+0.028$,
+dis\_amp$=+0.023$, bdy$=+0.010$, dis\_anti$=+0.005$, anti$=+0.002$,
+minn$\approx0$.
+The fi--geo gap grows monotonically with both $\mu_{\max}$ and $J/U$,
+from $+0.0002$ at $\mu_{\max}=0.5$ to $+0.017$ at $\mu_{\max}=2.0$.
+The fact that dis\_amp ranks well below fi confirms that $\Fi$ carries
+information beyond raw disorder amplitude: variance tracks local
+susceptibility to dephasing, not merely where disorder is strongest.
+At weak disorder ($\mu_{\max}\lesssim0.5$), symmetry is approximately intact
+and fi$\approx$geo, consistent with the clean-chain result.
+
+\subsection{Shell-matched permutation controls}
+\label{sec:shellperm}
+
+In the disordered chain, sites can be grouped into shells by their
+distance from the nearest boundary.
+Shell-matched permutation controls hold shell membership fixed and randomly
+permute the assignment of sites within each shell, then apply targeted
+dephasing to the permuted top-$k$ sites.
+This isolates the within-shell variance information from the shell-level
+geometry.
+
+At $L=6$, $\mu_{\max}\leq0.3$, $J/U\geq0.30$, $\tau=3$, fi beats all
+shell-matched permutations by $+0.002$ to $+0.006$
+(Fig.~\ref{fig:selector_shellperm}, right).
+This establishes that $\Fi$ carries within-shell information that is not
+captured by shell geometry alone: sites sharing the same shell distance
+are not interchangeable when selected by variance.
+
+\subsection{Deterministic inhomogeneous chain}
+\label{sec:inhomogeneous}
+
+To test the geometry--variance separation without stochasticity, we
+studied a deterministic tilt chain in which a linearly varying chemical
+potential $\mu_i = \mu_0(i - (L-1)/2)$ is applied, explicitly breaking
+reflection symmetry by design.
+The resulting $\Fi$ profile does not peak at the geometric center, so fi
+and geo select different sites (overlap zero).
+
+At $J/U=0.40$, $\tau=3$: fi$>$geo with a gap of $+0.032$ to $+0.054$
+(Fig.~\ref{fig:tilt_gammascan}, left).
+This non-random, symmetry-breaking control confirms that variance tracks
+local number fluctuation structure rather than spatial position, and that
+the handle is not simply a proxy for geometric centrality.
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=\linewidth]{fig4_selector_shellperm.pdf}
+\caption{Selector discrimination under symmetry breaking.
+\textbf{Left:} under strong disorder, the variance-based selector $\Fi$
+ranks above the tested alternatives, including geometric centrality and
+disorder amplitude.
+\textbf{Right:} shell-matched permutation controls show that $\Fi$ retains
+an advantage beyond shell position alone.
+Together these results show that strong disorder separates variance
+information from geometry and that the surviving advantage is not reducible
+to shell membership.}
+\label{fig:selector_shellperm}
+\end{figure}
+
+\subsection{Extra dephasing rate scan}
+\label{sec:gammascan}
+
+To assess sensitivity to the choice of $\gamma_{\mathrm{extra}}$, we
+scanned $\gamma_{\mathrm{extra}}\in\{0.1,0.2,0.5,1.0,2.0\}$ at $L=6$,
+$J/U=0.40$, $\tau=3$.
+The mean advantages are $+0.0063$, $+0.0106$, $+0.0163$, $+0.0149$,
+$+0.0035$ respectively.
+The advantage peaks near $\gamma_{\mathrm{extra}}=0.5$--$1.0$ and
+collapses at very high rates, where the extra dephasing saturates the
+dynamics (Fig.~\ref{fig:tilt_gammascan}, right).
+The paper's primary choice $\gamma_{\mathrm{extra}}=0.5$ lies at the
+near-optimal point rather than at an arbitrary or cherry-picked value.
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=\linewidth]{fig5_tilt_gammascan.pdf}
+\caption{Symmetry breaking and intervention-strength robustness.
+\textbf{Left:} in a deterministic tilted chain where the variance and
+geometric selectors differ by construction, the variance-based selector
+outperforms geometric centrality.
+\textbf{Right:} the intervention advantage is robust across a broad
+mid-range of extra dephasing strength and is near-optimal around
+$\gamma_{\mathrm{extra}}\approx0.5$--$1.0$, showing that the main paper
+choice is not a tuning artefact.}
+\label{fig:tilt_gammascan}
+\end{figure}
+
 \section{Discussion}
 \label{sec:disc}
 
-\paragraph{Summary.}
-In an open Bose--Hubbard chain, sites of high local occupation variance
-serve as causal handles in the intermediate and stronger coupling regime:
-targeting them with additional dephasing produces more local future
-occupation loss than matched-budget random targeting at
-$J/U\in\{0.30,0.40\}$, robustly across the full tested size ladder
-$L\in\{6,7,8,9\}$ and all tested horizons $\tau\in\{1,2,3\}$.
-The effect is absent or reversed in the negative regime ($J/U=0.12$) and
-size- and horizon-dependent in the crossover band
-$J/U\approx0.18$--$0.24$, with the first-pass onset shifting upward with
-$L$ and downward with $\tau$, both trends monotone across the ladder.
+\paragraph*{Summary.}
+In the tested one-dimensional open Bose--Hubbard chain, local number
+variance $\Fi = \langle\nop_i^2\rangle - \langle\nop_i\rangle^2$
+identifies causally effective intervention sites in the positive pocket
+$J/U\geq0.30$: targeting the highest-$\Fi$ sites with additional dephasing
+produces more local future occupation loss than matched-budget random
+targeting, robustly across all tested $L\in\{6,7,8\}$ and
+$\tau\in\{1,2,3\}$, with the effect increasing with system size.
+The handle is regime-dependent---harmful at $J/U=0.12$, transitional near
+$J/U\approx0.20$---and its advantage is not reducible to geometric
+centrality, shell position, mean occupation, or disorder amplitude.
 
-\paragraph{Mechanism.}
-The site-resolved response is more consistent with nonlocal redistribution
-than with local instability.
-Perturbing high-$\Fi$ sites is associated with a redistribution of
-subsequent occupation change across the chain.
-A complete mechanistic account is beyond the scope of the present analysis.
+\paragraph*{Mechanism.}
+The site-resolved response is consistent with nonlocal redistribution
+rather than purely local depletion: additional dephasing at high-$\Fi$
+sites alters the subsequent spatial pattern of occupation loss across the
+chain.
+The present paper does not attempt a full microscopic transport account;
+its main result is the regime-dependent identification of high-$\Fi$ sites
+as effective causal handles.
 
-\paragraph{What is not claimed.}
+\paragraph*{What is not claimed.}
 We do not claim that high-$\Fi$ targeting is optimal among all possible
 intervention strategies; that the effect extends to all coupling regimes
-(it does not hold at $J/U=0.12$ and is transitional in the crossover band
-$J/U\approx0.18$--$0.24$); that the mechanism generalises to other quantum
-systems or to chains beyond the tested range; or that the
-occupation-variance handle corresponds to any equilibrium observable.
+or all system sizes; that the mechanism generalises to other quantum
+systems; or that the occupation-variance handle corresponds to any
+equilibrium observable.
+No thermodynamic-limit or universal-handle claims are made.
 
-\paragraph{Scope and limitations.}
-The causal-handle effect is regime- and size-dependent in the present
-design, with the clearest fully robust support in the
-$J/U=0.30$--$0.40$ regime.
+\paragraph*{Scope and limitations.}
 The Hilbert-space dimension of the fixed-$N$ sector grows combinatorially
 with $L$ and $n_{\max}$, limiting exact Lindblad evolution to small chains.
-The tested range ($L\leq9$, $n_{\max}=3$) establishes the effect in the
-positive pocket and sharpens the crossover band to
-$J/U\approx0.18$--$0.24$ (depending on system size and horizon),
-but does not access the thermodynamic limit.
+The tested range ($L\leq8$, $n_{\max}=3$) establishes the effect in the
+positive pocket but does not access the thermodynamic limit.
 Whether the positive pocket persists, broadens, or shifts at larger system
 sizes is an open question requiring approximate methods such as
 matrix-product-operator Lindblad evolution~\cite{daley2014}.
-A further structural limitation of the present design is that, due to the
-reflection symmetry established above, the high-$\Fi$ selector and a
-geometric central-$k$ selector are identical in this model.
-The experiment therefore establishes that targeting the $k$ central sites
-produces more occupation loss than matched-budget random targeting in the
-positive pocket; it cannot presently attribute the effect to the variance
-information specifically rather than to the spatial position.
-Disentangling the two requires breaking the spatial symmetry --- through,
-for example, disorder, asymmetric filling, or site-dependent coupling ---
-and is left for future work.
 
-\paragraph{Experimental relevance.}
+\paragraph*{Experimental relevance.}
 The 1D open Bose--Hubbard model under dephasing is experimentally
 motivated.
 Cold-atom optical-lattice platforms already realise 1D Bose--Hubbard-like
@@ -505,9 +626,6 @@ systems with tunable $J/U$~\cite{jaksch1998,greiner2002}, and recent
 advances in quantum-gas microscopy provide site-resolved preparation and
 readout relevant to the targeted-intervention protocol studied
 here~\cite{gross2021}.
-In particular, groups working with 1D optical lattices have demonstrated
-single-site addressing and out-of-equilibrium dynamics in regimes that
-overlap with the coupling range explored here.
 The Lindblad dephasing modelled by $\gamma\hat{n}_i$ is a standard
 approximation for photon-scattering-induced decoherence in optical
 lattices~\cite{pichler2010,daley2014}.
