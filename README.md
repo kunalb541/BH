@@ -91,6 +91,14 @@ In the positive pocket (J/U ≥ 0.30) the F_i-selected subset is globally optima
 
 In every positive-pocket condition: signed gap > clipped gap, absolute gap > 0, redistribution gap > 0. The positive-part clipping is conservative — removing it yields a larger advantage.
 
+### Susceptibility: redistribution, not local depletion
+
+Spearman(F_i, χ_redist) > 0 in every condition (all L, J/U, τ, δγ). Spearman(F_i, χ_clip) is negative at τ=1,2 across all regimes. F_i tracks redistribution susceptibility, not local-depletion susceptibility. Sign pattern stable across δγ ∈ {0.05, 0.1, 0.2}.
+
+### nmax truncation check
+
+L=8, N=4 repeated with nmax=4 (D=322→330, the only binding case). Regime ordering, sign pattern, and top-F_i percentile tier unchanged. Gap shifts < 2×10⁻⁴.
+
 ---
 
 ## System parameters
@@ -129,7 +137,7 @@ BH/
 ├── refs.bib                 # BibTeX references
 ├── paper.pdf                # Compiled manuscript
 └── outputs/                 # Generated outputs (not tracked in git)
-    ├── bh_hardening/        # Exhaustive subset + robustness CSVs, summary JSON, figures
+    ├── bh_hardening/        # Exhaustive subset, robustness, susceptibility, nmax CSVs + figures
     ├── checkpoints/         # Per-condition JSON checkpoints (resume on interruption)
     ├── data/                # config.json, results CSVs
     ├── figures/             # PDF/PNG figures (fig1–fig5)
@@ -197,6 +205,24 @@ Per-condition checkpoints are written to `outputs/checkpoints/` — safe to inte
 |---|---|---|
 | 6 | 56 | ~2–3 min |
 | 7 | 84 | ~5–8 min |
+
+### Hardening tests (exhaustive subset ranking, susceptibility, nmax check)
+
+```bash
+# Full battery — all L, all J/U, all tau (~60 min)
+python bh_hardening.py --full
+
+# With delta-gamma sensitivity for susceptibility (~3× longer)
+python bh_hardening.py --full --delta-gamma 0.05 0.1 0.2
+
+# nmax truncation check — L=8 nmax=3 vs nmax=4 (~15 min)
+python bh_hardening.py --nmax-check --no-test2 --skip-sanity --no-figures
+
+# Quick smoke test — L=6 only (~2 min)
+python bh_hardening.py --quick
+```
+
+Outputs → `outputs/bh_hardening/`: `susceptibility_results.csv`, `subset_ranking_results.csv`, `target_robustness_results.csv`, `nmax_truncation_results.csv`, `summary_hardening.json`, figures.
 
 ### Compile the paper
 
