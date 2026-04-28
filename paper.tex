@@ -77,6 +77,11 @@ intervention subsets: in the positive-pocket regime it lies at the top of
 the subset-response distribution at every tested $(L,\tau)$ pair, and the
 conclusion survives signed, absolute, and redistribution-based target
 definitions.
+Finite-difference susceptibility analysis shows that $\Fi$ is not a
+local-depletion susceptibility but a redistribution susceptibility:
+Spearman$(\Fi,\chi^{\mathrm{redist}})$ is positive across all regimes and
+all horizons, and the top-$\Fi$ sites exactly match the highest
+redistribution-susceptibility sites at $L=6$, $\tau\geq2$.
 \end{abstract}
 
 \maketitle
@@ -645,6 +650,61 @@ is positive.
 The clipping is conservative, not inflating: removing it yields a
 \emph{larger} advantage in every tested positive-pocket condition.
 
+\subsection{Susceptibility structure: redistribution, not local depletion}
+\label{sec:susceptibility}
+
+To probe whether $\Fi$ is grounded in the actual per-site dephasing response,
+we compute finite-difference susceptibilities at each site $i$ under a small
+extra dephasing dose $\delta\gamma=0.1$:
+\begin{align}
+\chi^{\mathrm{clip}}_i(\tau)   &= \frac{\max(0,\,\langle\nop_i\rangle_0^\tau - \langle\nop_i\rangle_{\delta\gamma_i}^\tau)}{\delta\gamma}, \\
+\chi^{\mathrm{redist}}_i(\tau) &= \frac{\sum_j|\langle\nop_j\rangle_{\delta\gamma_i}^\tau - \langle\nop_j\rangle_0^\tau|}{\delta\gamma},
+\end{align}
+where $\langle\nop_j\rangle_{\delta\gamma_i}^\tau$ is the occupation at site
+$j$ after evolving to horizon $\tau$ with extra dephasing $\delta\gamma$
+applied only at site $i$, and $\langle\nop_j\rangle_0^\tau$ is the
+corresponding baseline (no extra dephasing).
+
+The Spearman correlation between $\Fi$ and these susceptibilities, computed
+over all $L$ sites for each $(L,J/U,\tau)$ condition, reveals a clear
+structural distinction.
+$\Fi$ is \emph{not} a local-depletion susceptibility: Spearman$(\Fi,
+\chi^{\mathrm{clip}})$ is negative at $\tau=1,2$ in nearly all conditions
+and only weakly positive at $\tau=3$ in the positive pocket.
+By contrast, $\Fi$ is consistently a \emph{redistribution} susceptibility:
+Spearman$(\Fi, \chi^{\mathrm{redist}})$ is positive across all regimes and
+all $\tau$, reaching values of $0.5$--$1.0$ at $\tau\geq2$ (Fig.~\ref{fig:susc}).
+At $L=6$, $\tau\geq2$, the top-$k$ overlap between the highest-$\Fi$ sites
+and the highest-$\chi^{\mathrm{redist}}$ sites is $1.0$ in all tested conditions,
+meaning $\Fi$ exactly identifies the sites that most strongly perturb the global
+occupation distribution per unit extra dephasing.
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=\linewidth]{fig_susceptibility_scatter.pdf}
+\caption{Per-site susceptibility vs $\Fi$ at $\tau=3$ for representative
+conditions.
+\textbf{Top row:} redistribution susceptibility
+$\chi^{\mathrm{redist}}_i$ vs $\Fi$ --- Spearman correlation is positive
+in all four panels.
+\textbf{Bottom row:} local-depletion susceptibility
+$\chi^{\mathrm{clip}}_i$ vs $\Fi$ --- correlation is negative or near zero
+in three of four panels, and weakly positive only at $J/U=0.40$.
+The contrast establishes that $\Fi$ is a redistribution handle, not a
+local-depletion handle.}
+\label{fig:susc}
+\end{figure}
+
+This susceptibility structure provides a mechanistic interpretation of
+the regime-dependence: $\Fi$ consistently identifies sites with high
+redistribution susceptibility, but whether that redistribution leads to
+net local occupation loss at the selected sites (positive pocket) or net
+local gain (negative regime) depends on the global response pattern at
+that coupling strength.
+The variance handle works not by directly depleting targeted sites but by
+controlling how occupation is redistributed across the chain on the
+time scale $\tau$.
+
 \section{Discussion}
 \label{sec:disc}
 
@@ -665,13 +725,17 @@ $J/U\approx0.20$---and its advantage is not reducible to geometric
 centrality, shell position, mean occupation, or disorder amplitude.
 
 \paragraph*{Mechanism.}
-The site-resolved response is consistent with nonlocal redistribution
-rather than purely local depletion: additional dephasing at high-$\Fi$
-sites alters the subsequent spatial pattern of occupation loss across the
-chain.
-The present paper does not attempt a full microscopic transport account;
-its main result is the regime-dependent identification of high-$\Fi$ sites
-as effective causal handles.
+The susceptibility analysis in Sec.~\ref{sec:susceptibility} shows that
+$\Fi$ is a redistribution susceptibility rather than a local-depletion
+susceptibility: high-$\Fi$ sites are those where a small extra dephasing
+dose most strongly perturbs the global occupation pattern.
+Whether this redistribution results in net local loss at the targeted sites
+(positive pocket) or net local gain (negative regime) depends on the
+coupling-strength-dependent global response structure, not on any local
+property of the sites themselves.
+A full microscopic account of this redistribution---connecting $\Fi$ to the
+Lindblad generator spectrum or the Green's function of the superoperator---
+is left for future work.
 
 \paragraph*{What is not claimed.}
 The exhaustive enumeration establishes near-optimality within the
