@@ -1,0 +1,38 @@
+{
+  "0.12": {
+    "J_over_U": 0.12,
+    "mean_spearman_clip": -0.7808368566487975,
+    "mean_spearman_signed": -0.35620589600705804,
+    "mean_percentile_clip": 30.0,
+    "median_percentile_clip": 28.57142857142857,
+    "frac_top_quartile": 0.0,
+    "frac_same_sign_clip_signed": 0.5555555555555556
+  },
+  "0.20": {
+    "J_over_U": 0.2,
+    "mean_spearman_clip": -0.7938148616717016,
+    "mean_spearman_signed": -0.6288363242059531,
+    "mean_percentile_clip": 62.94973544973545,
+    "median_percentile_clip": 67.85714285714286,
+    "frac_top_quartile": 0.3333333333333333,
+    "frac_same_sign_clip_signed": 0.6666666666666666
+  },
+  "0.30": {
+    "J_over_U": 0.3,
+    "mean_spearman_clip": -0.4911014504674947,
+    "mean_spearman_signed": -0.5739302268568726,
+    "mean_percentile_clip": 100.0,
+    "median_percentile_clip": 100.0,
+    "frac_top_quartile": 1.0,
+    "frac_same_sign_clip_signed": 1.0
+  },
+  "0.40": {
+    "J_over_U": 0.4,
+    "mean_spearman_clip": -0.2974085838930154,
+    "mean_spearman_signed": -0.4941693942962347,
+    "mean_percentile_clip": 99.4047619047619,
+    "median_percentile_clip": 100.0,
+    "frac_top_quartile": 1.0,
+    "frac_same_sign_clip_signed": 1.0
+  }
+}
