@@ -1,22 +1,54 @@
-Dear Editors of Physical Review A,
+Dear Editors,
 
-I am submitting the manuscript "Local number variance as a causal handle in the one-dimensional Bose–Hubbard chain" for consideration as a Regular Article.
+Please consider our manuscript, "Local number variance as a causal handle in the
+one-dimensional Bose-Hubbard chain," for publication in Physical Review A.
 
-The paper addresses whether a local structural observable — the site-resolved number variance F_i = <n_i^2> - <n_i>^2 — can serve as a targeted control handle in a driven-dissipative quantum lattice system. Concretely, does applying extra dephasing at the highest-F_i sites produce measurably more local occupation loss than applying the same dephasing budget at randomly chosen sites?
+The manuscript studies a targeted-intervention question in an open quantum lattice
+system: under uniform Lindblad dephasing, can a local fluctuation observable identify
+sites where additional dephasing produces a measurably different future response than
+matched-budget random targeting? We address this in a one-dimensional Bose-Hubbard
+chain using exact Lindblad evolution in fixed-particle-number sectors, with no Trotter
+approximation or stochastic unraveling.
 
-All evolution is exact Lindblad (no Trotter decomposition, no stochastic unravelling). The primary sweep over L ∈ {6, 7, 8}, J/U ∈ {0.12, 0.20, 0.30, 0.40}, and τ ∈ {1, 2, 3} reveals three regimes: F_i targeting is harmful at J/U = 0.12, transitional near J/U ≈ 0.20, and reliably beneficial at J/U ≥ 0.30. Best effects reach +0.047 to +0.072 (mean advantage) at J/U = 0.40, τ = 3.
+The main result is that local occupation variance,
+F_i = <n_i^2> - <n_i>^2,
+acts as a regime-dependent redistribution handle. In the tested finite chains
+L in {6,7,8}, targeting the highest-F_i sites is harmful at J/U = 0.12, transitional
+near J/U ~ 0.20, and robustly beneficial for J/U >= 0.30. The positive-pocket result
+is stable across chain length and horizon.
 
-Four disentanglement experiments rule out confounds that the primary sweep cannot separate — geometric centrality, shell position, mean occupation, disorder amplitude, and generator-action-based selection. In the clean, symmetric chain, F_i and geometric centrality are degenerate; symmetry breaking (disorder, deterministic tilt) separates them. Under strong disorder (μ_max = 2.0) F_i ranks first among nine tested selectors, and shell-matched permutation controls confirm the advantage is not reducible to shell membership. A gamma scan confirms the main choice γ_extra = 0.5 is near-optimal and not a tuning artefact.
+The manuscript includes several controls designed to separate variance information from
+simpler confounds. Disorder sweeps, shell-matched permutation controls, deterministic
+tilt chains, and extra-dephasing-rate scans show that the effect is not reducible to
+geometric centrality, shell position, mean occupation, disorder amplitude, or a tuned
+intervention strength. Because the systems are small enough for complete enumeration,
+we also rank the F_i-selected subset against all possible k-site intervention subsets;
+in the positive-pocket regime it lies at the top of the subset-response distribution,
+reaching global or near-global optimality across the tested conditions.
 
-This work fits Physical Review A as an exact many-body Lindblad study of a well-studied model (Bose–Hubbard) with a concrete, quantitative result on targeted dissipative control — a topic directly relevant to current experimental capabilities in cold-atom quantum simulation. The results are carefully scoped: the handle is regime-dependent, and no claims are made beyond the tested sizes (L ≤ 8) or selectors.
+The mechanistic point of the paper is that F_i is not a local-depletion susceptibility.
+Finite-difference response tests show instead that F_i tracks redistribution
+susceptibility: high-F_i sites are those where a small extra dephasing dose most
+strongly perturbs the global occupation pattern. This explains why the same local
+observable can identify a strong response channel across regimes while the sign of the
+local-loss outcome remains coupling-dependent.
 
-Code and raw data are publicly available at https://github.com/kunalb541/BH (MIT license).
+The manuscript is intentionally scoped as an exact finite-size response study. It does
+not claim thermodynamic-limit universality or optimal control. Rather, it establishes,
+under controlled Lindblad dynamics, that local number variance can function as a
+regime-dependent redistribution handle for targeted dephasing in finite Bose-Hubbard
+chains.
 
-I confirm that this manuscript has not been published elsewhere and is not under consideration at another journal.
+All simulation code and raw data are publicly available at:
+https://github.com/kunalb541/BH
+
+This manuscript is original, has not been published elsewhere, and is not under
+consideration by another journal. There are no conflicts of interest to declare.
+
+Thank you for your consideration.
 
 Sincerely,
-
 Kunal Bhatia
-Independent Researcher
-Heidelberg, Germany
+Independent Researcher, Heidelberg, Germany
 ORCID: 0009-0007-4447-6325
+kunal29bhatia@gmail.com
