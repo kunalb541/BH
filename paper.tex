@@ -38,8 +38,9 @@ Additional dephasing at the top-$k$ highest-$\Fi$ sites is compared
 against matched-budget random targeting across 100 independent trials
 per condition, using exact Lindblad evolution in the fixed-particle-number
 sector ($L\in\{6,7,8\}$, $\tau\in\{1,2,3\}$).
-The primary sweep reveals three regimes: at $J/U=0.12$ targeted intervention
-is \emph{harmful} (95\% CI strictly below zero at all tested $L$ and $\tau$);
+The primary sweep reveals three regimes: at $J/U=0.12$ the response is
+near-zero to weakly harmful (95\% CI below zero at the paper's burn-in
+time, but small in magnitude and partly burn-in-sensitive at $L=6$);
 near $J/U\approx0.20$ there is a crossover that is sensitive to system size
 and horizon; at $J/U\geq0.30$ targeted intervention is reliably
 \emph{beneficial} (CI above zero at every tested $(L,\tau)$ combination),
@@ -369,8 +370,10 @@ $L$ & $J/U$ & $D$ & $\varepsilon_{\mathrm{tr}}$ & $\varepsilon_{\mathrm{H}}$ & $
 
 Table~\ref{tab:main} reports the local-loss difference for all conditions
 at $L=6$.
-At $J/U=0.12$ the targeted intervention is \emph{harmful}: the 95\% CI is
-strictly below zero at all tested $L$ and $\tau$.
+At $J/U=0.12$ the response is near-zero to weakly harmful: the 95\% CI is
+below zero at the paper's burn-in time, but the gaps are small in magnitude
+($|$mean$|\lesssim0.01$) and, as shown in Sec.~\ref{sec:burnin}, partly
+burn-in-sensitive at $L=6$.
 At $J/U=0.20$ there is a crossover that is sensitive to system size and
 horizon.
 At $J/U\geq0.30$ the targeted intervention is reliably \emph{beneficial},
@@ -383,7 +386,7 @@ size: $+0.047$ ($L=6$), $+0.068$ ($L=7$), $+0.072$ ($L=8$).
 \caption{Local-loss difference (targeted $-$ random) at $L=6$,
 $N_{\mathrm{trials}}=100$ per condition.
 Format: mean $[\text{95\% CI}]$.
-$J/U=0.12$ is uniformly negative (negative regime); $J/U=0.20$ is
+$J/U=0.12$ is near-zero to weakly negative (low-coupling regime); $J/U=0.20$ is
 transitional (crossover band); $J/U\in\{0.30,0.40\}$ are robustly positive.}
 \label{tab:main}
 \input{outputs/tables/table_main.tex}
@@ -445,12 +448,13 @@ at the strongest coupling.}
 
 The results define three regimes within the tested parameter range:
 
-\textbf{Negative regime} ($J/U=0.12$):
-The targeted intervention produces less local loss than random targeting at
-all three tested chain lengths and all horizons.
+\textbf{Low-coupling regime} ($J/U=0.12$):
+The targeted intervention produces near-zero to weakly negative responses
+relative to random targeting.
 In this deep Mott-like regime the occupation-variance handle does not
-identify intervention-sensitive sites; the 95\% CIs are strictly negative at
-every $(L,\tau)$ combination tested.
+identify intervention-sensitive sites; the 95\% CIs are below zero at the
+paper's burn-in time, but the gaps are small in magnitude and, as shown in
+Sec.~\ref{sec:burnin}, partly burn-in-sensitive at $L=6$.
 
 \textbf{Crossover band} ($J/U\approx0.18$--$0.24$, depending on $L$ and $\tau$):
 The handle begins to function but its effectiveness is size- and
@@ -711,9 +715,9 @@ $L=8$, $J/U=0.40$ (one of 56 subsets ties or exceeds it).
 The crossover band ($J/U=0.20$) yields 29--87th percentile depending on
 $L$ and $\tau$, consistent with the regime's size- and horizon-sensitive
 character.
-The negative regime ($J/U=0.12$) gives 21--40th percentile---the
+The low-coupling regime ($J/U=0.12$) gives 21--40th percentile---the
 $\Fi$-selected subset actively ranks below the median, consistent with
-the harmful-regime result.
+the low-coupling-regime result.
 
 We also verified that the positive-pocket advantage is not produced by
 the positive-part clipping in the target metric.
@@ -724,6 +728,40 @@ $\sum_j|\langle\nop_j\rangle_{\mathrm{targeted}}-\langle\nop_j\rangle_{\mathrm{b
 is positive.
 The clipping is conservative, not inflating: removing it yields a
 \emph{larger} advantage in every tested positive-pocket condition.
+
+\subsection{Burn-in sensitivity}
+\label{sec:burnin}
+
+Table~\ref{tab:burnin} reports the clipped local-loss gap and exhaustive
+subset percentile at $\tau=3$ for three burn-in multipliers ($0.5\times$,
+$1.0\times$, $2.0\times$ the paper's baseline $t_{\mathrm{burn}}=5$).
+The positive-pocket conclusion ($J/U=0.40$) is stable at both $L=6$ and
+$L=8$: the gap remains positive and the $\Fi$-selected subset stays in
+the top quartile or above across all three burn-in times.
+The low-coupling response ($J/U=0.12$) is much smaller in magnitude
+($|\text{gap}|\lesssim0.006$) and partly burn-in-sensitive at $L=6$.
+The positive-pocket conclusion is stable under $0.5\times$--$2\times$
+burn-in variation at both $L=6$ and $L=8$; the low-coupling response is
+much smaller in magnitude and can become burn-in-sensitive at $L=6$.
+
+\begin{table}[tbp]
+\centering
+\caption{Burn-in sensitivity at $\tau=3$: clipped local-loss gap and
+exhaustive-subset percentile at three burn-in multipliers relative to
+$t_{\mathrm{burn}}=5$.
+Positive gap means the $\Fi$-selected subset exceeds the all-subset mean.}
+\label{tab:burnin}
+\begin{ruledtabular}
+\begin{tabular}{llrrrrr}
+$L$ & $J/U$ & $0.5\times$ gap & $1.0\times$ gap & $2.0\times$ gap & Pct.\ range & Sign stable \\
+\hline
+6 & 0.12 & $-0.002$ & $-0.002$ & $+0.003$ & 40--80\% & no \\
+6 & 0.40 & $+0.064$ & $+0.047$ & $+0.012$ & 87--100\% & yes \\
+8 & 0.12 & $-0.005$ & $-0.006$ & $<0.001$ & 21--54\% & yes \\
+8 & 0.40 & $+0.065$ & $+0.073$ & $+0.009$ & 80--100\% & yes \\
+\end{tabular}
+\end{ruledtabular}
+\end{table}
 
 \subsection{Susceptibility structure: redistribution, not local depletion}
 \label{sec:susceptibility}
@@ -796,9 +834,9 @@ Exhaustive enumeration of all $\binom{L}{k}$ intervention subsets
 further shows that the $\Fi$-selected subset lies at the top of the
 subset-response distribution in the positive pocket, and this advantage
 survives signed, absolute, and redistribution-based target definitions.
-The handle is regime-dependent---harmful at $J/U=0.12$, transitional near
-$J/U\approx0.20$---and its advantage is not reducible to geometric
-centrality, shell position, mean occupation, or disorder amplitude.
+The handle is regime-dependent---near-zero to weakly harmful at $J/U=0.12$,
+transitional near $J/U\approx0.20$---and its advantage is not reducible to
+geometric centrality, shell position, mean occupation, or disorder amplitude.
 
 \paragraph*{Mechanism.}
 The susceptibility analysis in Sec.~\ref{sec:susceptibility} shows that
@@ -806,7 +844,7 @@ $\Fi$ is a redistribution susceptibility rather than a local-depletion
 susceptibility: high-$\Fi$ sites are those where a small extra dephasing
 dose most strongly perturbs the global occupation pattern.
 Whether this redistribution results in net local loss at the targeted sites
-(positive pocket) or net local gain (negative regime) depends on the
+(positive pocket) or net local gain (low-coupling regime) depends on the
 coupling-strength-dependent global response structure, not on any local
 property of the sites themselves.
 A full microscopic account of this redistribution---connecting $\Fi$ to the
