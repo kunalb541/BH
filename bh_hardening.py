@@ -1,7 +1,7 @@
 """
 bh_hardening.py
 ===============
-Three referee-killing hardening tests for the BH causal-handle paper.
+Three referee-killing hardening tests for the BH redistribution-handle paper.
 
 TEST 1  — Susceptibility benchmark
     Does F_i predict per-site response to a small extra local dephasing?
@@ -608,6 +608,150 @@ def regime_summary(susc_rows, subset_rows, robust_rows):
 
 
 # ===========================================================================
+# BURN-IN SENSITIVITY CHECK
+# ===========================================================================
+
+def test_burnin_sensitivity(L, JU_list, tau_list,
+                            burnin_multipliers=(0.5, 1.0, 2.0),
+                            base_burnin=BURN_IN):
+    """L may be a single int or a list of ints."""
+    if isinstance(L, (list, tuple)):
+        all_rows = []
+        for l in L:
+            all_rows.extend(test_burnin_sensitivity(
+                l, JU_list, tau_list, burnin_multipliers, base_burnin))
+        return all_rows
+    """
+    Test whether positive-pocket and negative-regime conclusions depend on
+    burn-in time.
+
+    For each (L, J/U, tau, burnin_multiplier):
+      - evolve ground state under baseline dephasing for t_burn * multiplier
+      - compute F_i at that state, select top-k subset
+      - run exhaustive subset ranking (clipped metric)
+      - report gap_clip, gap_signed, gap_redist, percentile_clip, fi_subset
+
+    Interpretation:
+      - If positive pocket stays positive and high percentile across burn-ins:
+        result is robust; add paragraph to paper.
+      - If subset changes but percentile/gap stable:
+        handle is robust at response level, not at site-label level.
+      - If result flips: burn-in-dependent; reframe required.
+    """
+    U   = 1.0
+    N   = filling(L)
+    rows = []
+
+    for ju in JU_list:
+        J = ju * U
+        basis   = build_basis(L, N, NMAX)
+        idx_map = basis_index(basis)
+        D       = len(basis)
+
+        H        = build_hamiltonian(L, J, U, NMAX, basis, idx_map)
+        n_ops    = [number_op(i, D, basis) for i in range(L)]
+        n_diags  = np.array([np.diag(nop) for nop in n_ops], dtype=np.float64)
+        n2_diags = n_diags ** 2
+
+        liouv_base = build_liouvillian(H, n_ops, [GAMMA_BASE] * L)
+        site_diss  = [_make_site_dissipator(n_ops[i], D) for i in range(L)]
+
+        eigvals, eigvecs = np.linalg.eigh(H)
+        psi0 = eigvecs[:, 0]
+        rho0 = np.outer(psi0, psi0.conj())
+
+        k           = k_sites(L)
+        all_subsets = list(itertools.combinations(range(L), k))
+        n_subsets   = len(all_subsets)
+        assert n_subsets == comb(L, k)
+
+        for mult in burnin_multipliers:
+            t_burn   = base_burnin * mult
+            rho_burn = evolve_rho(rho0, liouv_base, t_burn)
+            rho_diag = np.real(np.diag(rho_burn))
+
+            # Sanity: trace and N
+            tr  = float(np.real(np.trace(rho_burn)))
+            occ = _fast_expectations(rho_diag, n_diags)
+            assert abs(tr - 1.0) < 1e-8,   f"trace={tr} at burn {t_burn}"
+            assert abs(occ.sum() - N) < 1e-6, f"N err at burn {t_burn}"
+
+            Fi            = _fast_variances(rho_diag, n_diags, n2_diags)
+            occ_burn      = occ.copy()
+            top_fi_subset = tuple(sorted(np.argsort(Fi)[-k:]))
+
+            cond_lite = dict(rho_burn=rho_burn, liouv_base=liouv_base,
+                             site_diss=site_diss, n_diags=n_diags,
+                             L=L, Fi=Fi, occ_burn=occ_burn)
+
+            for tau in tau_list:
+                rho_base_t = evolve_rho(rho_burn, liouv_base, tau)
+                occ_base_t = occ_from_rho(rho_base_t, cond_lite)
+
+                vals_clip   = np.zeros(n_subsets)
+                vals_signed = np.zeros(n_subsets)
+                vals_redist = np.zeros(n_subsets)
+
+                desc = (f"  burnin x{mult:.1f} L={L} J/U={ju:.2f} tau={tau:.0f}")
+                for sidx, subset in enumerate(
+                        tqdm(all_subsets, desc=desc, leave=False, ncols=80)):
+                    rho_s  = evolve_with_extra(cond_lite, list(subset), tau)
+                    occ_s  = occ_from_rho(rho_s, cond_lite)
+                    diff_s = occ_burn - occ_s
+
+                    vals_clip[sidx]   = sum(max(0.0, diff_s[i]) for i in subset)
+                    vals_signed[sidx] = sum(diff_s[i] for i in subset)
+                    vals_redist[sidx] = float(np.abs(occ_s - occ_burn).sum())
+
+                fi_idx     = all_subsets.index(top_fi_subset)
+                pct_clip   = float(100.0 * np.mean(vals_clip   <= vals_clip[fi_idx]))
+                gap_clip   = float(vals_clip[fi_idx]   - vals_clip.mean())
+                gap_signed = float(vals_signed[fi_idx] - vals_signed.mean())
+                gap_redist = float(vals_redist[fi_idx] - vals_redist.mean())
+
+                rows.append(dict(
+                    L=L, N=N, J_over_U=ju, tau=tau,
+                    burnin_multiplier=mult, t_burn=t_burn, k=k,
+                    fi_subset=list(top_fi_subset),
+                    Fi=Fi.tolist(),
+                    gap_clip=gap_clip,
+                    gap_signed=gap_signed,
+                    gap_redist=gap_redist,
+                    percentile_clip=pct_clip,
+                    fi_val_clip=float(vals_clip[fi_idx]),
+                    mean_clip=float(vals_clip.mean()),
+                ))
+
+    return rows
+
+
+def print_burnin_summary(rows):
+    df = pd.DataFrame([{k: v for k, v in r.items() if not isinstance(v, list)}
+                       for r in rows])
+    print("\n" + "=" * 75)
+    print("BURN-IN SENSITIVITY CHECK")
+    print("=" * 75)
+    print(df[["L", "J_over_U", "tau", "burnin_multiplier",
+              "fi_subset", "gap_clip", "gap_signed", "gap_redist",
+              "percentile_clip"]].to_string(index=False))
+
+    print("\nSign stability (gap_clip) across burn-in multipliers:")
+    for ju in sorted(df["J_over_U"].unique()):
+        for L in sorted(df["L"].unique()):
+            for tau in sorted(df["tau"].unique()):
+                sub = df[(df["J_over_U"] == ju) & (df["L"] == L) &
+                         (df["tau"] == tau)].sort_values("burnin_multiplier")
+                if len(sub) < 2:
+                    continue
+                signs  = sub["gap_clip"].apply(np.sign).values
+                stable = len(set(signs)) == 1
+                vals   = sub["gap_clip"].values
+                print(f"  L={L} J/U={ju:.2f} tau={tau}: "
+                      f"gaps={[f'{v:+.5f}' for v in vals]}  "
+                      f"sign_stable={'YES' if stable else 'NO'}")
+
+
+# ===========================================================================
 # NMAX TRUNCATION CHECK
 # ===========================================================================
 
@@ -741,8 +885,19 @@ def parse_args():
                    help="skip sanity checks (faster)")
     p.add_argument("--no-test2", action="store_true",
                    help="skip exhaustive subset ranking (saves time if only susceptibility needed)")
+    p.add_argument("--burnin-check", action="store_true",
+                   help="run burn-in sensitivity: 0.5x,1x,2x at L=6,8 J/U=0.12,0.40")
+    p.add_argument("--burnin-multipliers", nargs="+", type=float,
+                   default=[0.5, 1.0, 2.0],
+                   help="burn-in multipliers to test (default: 0.5 1.0 2.0)")
+    p.add_argument("--burnin-L", nargs="+", type=int, default=[6, 8],
+                   help="L values for burn-in check (default: 6 8)")
+    p.add_argument("--burnin-JU", nargs="+", type=float, default=[0.12, 0.40],
+                   help="J/U values for burn-in check (default: 0.12 0.40)")
+    p.add_argument("--burnin-tau", nargs="+", type=int, default=[3],
+                   help="tau values for burn-in check (default: 3)")
     p.add_argument("--nmax-check", action="store_true",
-                   help="run nmax=3 vs nmax=4 truncation check at L=6")
+                   help="run nmax=3 vs nmax=4 truncation check at L=8")
     p.add_argument("--nmax-list", nargs="+", type=int, default=[3, 4],
                    help="nmax values to compare in truncation check (default: 3 4)")
     return p.parse_args()
@@ -860,6 +1015,27 @@ def main():
     # ---------------------------------------------------------------------------
     # NMAX truncation check
     # ---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
+    # BURN-IN SENSITIVITY CHECK
+    # ---------------------------------------------------------------------------
+    if args.burnin_check:
+        print(f"\n{'─'*50}")
+        print(f"  [burn-in check] L={args.burnin_L}  J/U={args.burnin_JU}  "
+              f"tau={args.burnin_tau}  multipliers={args.burnin_multipliers}")
+        burnin_rows = test_burnin_sensitivity(
+            L=args.burnin_L,
+            JU_list=args.burnin_JU,
+            tau_list=args.burnin_tau,
+            burnin_multipliers=args.burnin_multipliers,
+        )
+        df_burnin = pd.DataFrame(
+            [{k: v for k, v in r.items() if not isinstance(v, list)}
+             for r in burnin_rows]
+        )
+        df_burnin.to_csv(outdir / "burnin_sensitivity_results.csv", index=False)
+        print(f"  [saved] burnin_sensitivity_results.csv")
+        print_burnin_summary(burnin_rows)
+
     if args.nmax_check:
         # nmax truncation is only binding when N > nmax for some site, i.e. N >= nmax+1.
         # At half-filling N=L//2: L=6 N=3, L=7 N=3 are unaffected (max occupation=N<=3).
