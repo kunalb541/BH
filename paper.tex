@@ -32,8 +32,8 @@
 \begin{abstract}
 We test whether the local occupation variance
 $\Fi = \langle\nop_i^2\rangle - \langle\nop_i\rangle^2$ identifies
-causally effective intervention sites in a one-dimensional open
-Bose--Hubbard chain under Lindblad dephasing.
+intervention subsets with enhanced finite-horizon response in a
+one-dimensional open Bose--Hubbard chain under Lindblad dephasing.
 Additional dephasing at the top-$k$ highest-$\Fi$ sites is compared
 against matched-budget random targeting across 100 independent trials
 per condition, using exact Lindblad evolution in the fixed-particle-number
@@ -66,11 +66,12 @@ A scan of the extra dephasing rate ($\gamma_{\mathrm{extra}}\in
 $\gamma_{\mathrm{extra}}=0.5$--$1.0$ and collapses at very high rates,
 confirming that the paper's choice $\gamma_{\mathrm{extra}}=0.5$ is
 near-optimal.
-Taken together, local number variance identifies causally effective
-intervention sites in the positive pocket ($J/U\geq0.30$), and this
-advantage is not reducible to geometric centrality, shell position, mean
-occupation, or disorder amplitude, while surviving the tested deterministic
-symmetry-breaking controls.
+Taken together, local number variance functions as a finite-size,
+regime-dependent redistribution handle in the positive pocket
+($J/U\geq0.30$): it identifies intervention subsets with enhanced
+finite-horizon response, and this advantage is not reducible to geometric
+centrality, shell position, mean occupation, or disorder amplitude, while
+surviving the tested deterministic symmetry-breaking controls.
 Because the systems are small enough for exhaustive enumeration, we further
 rank the $\Fi$-selected subset against all $\binom{L}{k}$ possible
 intervention subsets: in the positive-pocket regime it lies at the top of
@@ -273,6 +274,13 @@ where $\mathcal{S}$ is the set of selected sites and $\tau$ is the
 measurement horizon.
 The $\max(\cdot,0)$ clip counts only sites that \emph{lose} occupation;
 gains at other sites do not offset local losses.
+The clipped metric is the primary operational target because the
+intervention question asks whether selected sites subsequently lose
+occupation under targeted dephasing.
+Since dephasing conserves total particle number, local loss at selected
+sites necessarily reflects redistribution rather than particle removal.
+Signed, absolute, and redistribution-based metrics are reported in
+Sec.~\ref{sec:exhaustive} as robustness and mechanistic checks.
 
 \subsection{Geometry--variance separation}
 
@@ -306,6 +314,48 @@ A 95\% bootstrap confidence interval (1000 resamples, trial-level
 resampling) is constructed for each condition.
 The decision rule is that a condition passes if the lower bound of the
 95\% CI exceeds zero.
+Bootstrap CIs quantify uncertainty over random-control draws and are used
+descriptively.
+Because multiple conditions are inspected, isolated CI crossings are not
+interpreted as standalone discoveries; the main claims rest on structured
+regime consistency across $L$ and $\tau$, exhaustive subset enumeration
+(Sec.~\ref{sec:exhaustive}), and target-definition robustness.
+Random controls sample $k$-site subsets uniformly at random without
+replacement within each trial; trials are independent draws, and duplicate
+subsets across trials are not excluded.
+$\Fi$ ties in reflection-symmetric chains are resolved deterministically
+by the fixed argsort ordering; exhaustive enumeration confirms the
+positive-pocket claim is not dependent on random-baseline sampling.
+
+\subsection{Numerical diagnostics}
+\label{sec:numerics}
+
+Table~\ref{tab:diagnostics} reports numerical consistency checks for
+representative conditions spanning the dense ($D=56$) and sparse ($D=322$)
+code paths, evaluated at $\tau=3$ (the longest tested horizon).
+These are not additional physical assumptions; they document the
+floating-point residuals of the exact \texttt{expm\_multiply} evolution.
+
+\begin{table}[tbp]
+\centering
+\caption{Numerical diagnostics at $\tau=3$ for representative conditions.
+$\varepsilon_{\mathrm{tr}}=|\mathrm{Tr}\,\rho_\tau-1|$;
+$\varepsilon_{\mathrm{H}}=\|\rho_\tau-\rho_\tau^\dagger\|_\infty$;
+$\varepsilon_{N}=|\langle\hat{N}\rangle_\tau-\langle\hat{N}\rangle_0|$;
+$\lambda_{\min}$ is the smallest eigenvalue of $\rho_\tau$.
+All errors are at double-precision machine level.}
+\label{tab:diagnostics}
+\begin{ruledtabular}
+\begin{tabular}{llrcccc}
+$L$ & $J/U$ & $D$ & $\varepsilon_{\mathrm{tr}}$ & $\varepsilon_{\mathrm{H}}$ & $\varepsilon_{N}$ & $\lambda_{\min}$ \\
+\hline
+6 & 0.12 & 56  & $4\times10^{-16}$ & $3\times10^{-17}$ & $4\times10^{-16}$ & $4\times10^{-7}$  \\
+6 & 0.40 & 56  & $4\times10^{-16}$ & $2\times10^{-17}$ & $4\times10^{-16}$ & $3\times10^{-4}$  \\
+8 & 0.12 & 322 & $7\times10^{-16}$ & $6\times10^{-18}$ & $1\times10^{-15}$ & $2\times10^{-10}$ \\
+8 & 0.40 & 322 & $2\times10^{-16}$ & $4\times10^{-18}$ & $4\times10^{-16}$ & $8\times10^{-6}$  \\
+\end{tabular}
+\end{ruledtabular}
+\end{table}
 
 \section{Results}
 \label{sec:results}
@@ -493,10 +543,31 @@ information or reducible to geometry, we broke the clean-chain reflection
 symmetry by adding random on-site disorder $\mu_i\sim\mathrm{Uniform}(0,\mu_{\max})$
 to the chemical potential.
 Nine selectors were compared at $L=6$, 50 disorder realizations, and
-$J/U=0.40$, $\tau=3$: local variance (fi), geometric centrality (geo),
-maximum mean occupation (maxn), minimum mean occupation (minn), boundary
-distance (bdy), anti-variance (anti), generator action (gen), disorder
-amplitude (dis\_amp), and anti-disorder-amplitude (dis\_anti).
+$J/U=0.40$, $\tau=3$.
+Their definitions are given in Table~\ref{tab:selectors}.
+
+\begin{table}[tbp]
+\centering
+\caption{Selector definitions used in the disorder sweep.
+Each selector picks the top-$k$ (or bottom-$k$) sites by the listed
+criterion evaluated on the post-burn-in state $\rho_t$.}
+\label{tab:selectors}
+\begin{ruledtabular}
+\begin{tabular}{ll}
+Selector & Definition \\
+\hline
+fi        & Top-$k$ by $\Fi=\langle\nop_i^2\rangle-\langle\nop_i\rangle^2$ \\
+geo       & $k$ sites nearest the chain centre \\
+maxn      & Top-$k$ by $\langle\nop_i\rangle$ \\
+minn      & Bottom-$k$ by $\langle\nop_i\rangle$ \\
+bdy       & $k$ outermost (boundary) sites \\
+anti      & Bottom-$k$ by $\Fi$ \\
+gen       & Top-$k$ by $|\langle[\hat{L}_i,\hat{H}]\rangle|$, generator action \\
+dis\_amp  & Top-$k$ by $|\mu_i|$, disorder amplitude \\
+dis\_anti & Bottom-$k$ by $|\mu_i|$ \\
+\end{tabular}
+\end{ruledtabular}
+\end{table}
 
 At strong disorder ($\mu_{\max}\geq1.0$) fi is the top selector
 (Fig.~\ref{fig:selector_shellperm}, left):
@@ -712,11 +783,11 @@ time scale $\tau$.
 \paragraph*{Summary.}
 In the tested one-dimensional open Bose--Hubbard chain, local number
 variance $\Fi = \langle\nop_i^2\rangle - \langle\nop_i\rangle^2$
-identifies causally effective intervention sites in the positive pocket
-$J/U\geq0.30$: targeting the highest-$\Fi$ sites with additional dephasing
-produces more local future occupation loss than matched-budget random
-targeting, robustly across all tested $L\in\{6,7,8\}$ and
-$\tau\in\{1,2,3\}$, with the effect increasing with system size.
+functions as a finite-size, regime-dependent redistribution handle:
+in the positive pocket $J/U\geq0.30$, targeting the highest-$\Fi$ sites
+with additional dephasing produces more local future occupation loss than
+matched-budget random targeting, robustly across all tested $L\in\{6,7,8\}$
+and $\tau\in\{1,2,3\}$, with the effect increasing with system size.
 Exhaustive enumeration of all $\binom{L}{k}$ intervention subsets
 further shows that the $\Fi$-selected subset lies at the top of the
 subset-response distribution in the positive pocket, and this advantage
