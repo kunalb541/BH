@@ -1,4 +1,4 @@
-### Local number variance as a causal handle in the one-dimensional Bose–Hubbard chain
+### Local number variance as a redistribution handle in the one-dimensional Bose–Hubbard chain
 
 **Kunal Bhatia** — Independent Researcher, Heidelberg, Germany  
 ORCID: [0009-0007-4447-6325](https://orcid.org/0009-0007-4447-6325)

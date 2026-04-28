@@ -1,6 +1,6 @@
 Dear Editors,
 
-Please consider our manuscript, "Local number variance as a causal handle in the
+Please consider our manuscript, "Local number variance as a redistribution handle in the
 one-dimensional Bose-Hubbard chain," for publication in Physical Review A.
 
 The manuscript studies a targeted-intervention question in an open quantum lattice
