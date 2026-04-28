@@ -732,7 +732,7 @@ def print_burnin_summary(rows):
     print("BURN-IN SENSITIVITY CHECK")
     print("=" * 75)
     print(df[["L", "J_over_U", "tau", "burnin_multiplier",
-              "fi_subset", "gap_clip", "gap_signed", "gap_redist",
+              "gap_clip", "gap_signed", "gap_redist",
               "percentile_clip"]].to_string(index=False))
 
     print("\nSign stability (gap_clip) across burn-in multipliers:")
