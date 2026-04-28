@@ -72,6 +72,25 @@ In a tilted chain where F_i ≠ geo by construction, fi > geo with a gap of +0.0
 
 The advantage peaks near γ_extra ≈ 0.5–1.0 and collapses at very high rates. The paper's choice γ_extra = 0.5 is near-optimal.
 
+### Exhaustive subset ranking (hardening)
+
+All C(L,k) intervention subsets evaluated exactly (C(6,2)=15, C(7,3)=35, C(8,3)=56):
+
+| L | J/U | τ=1 | τ=2 | τ=3 |
+|---|-----|-----|-----|-----|
+| 6 | 0.30 | 100% | 100% | 100% |
+| 6 | 0.40 | 100% | 100% | 100% |
+| 7 | 0.30 | 100% | 100% | 100% |
+| 7 | 0.40 | 100% | 100% | 100% |
+| 8 | 0.30 | 100% | 100% | 100% |
+| 8 | 0.40 |  98% |  98% |  98% |
+
+In the positive pocket (J/U ≥ 0.30) the F_i-selected subset is globally optimal or tied at every tested (L, τ), except L=8, J/U=0.40 where it is 98th percentile (1 of 56 subsets ties/beats it). Negative regime: 21–40th percentile. Crossover: 29–87th percentile.
+
+### Target robustness
+
+In every positive-pocket condition: signed gap > clipped gap, absolute gap > 0, redistribution gap > 0. The positive-part clipping is conservative — removing it yields a larger advantage.
+
 ---
 
 ## System parameters
@@ -101,16 +120,19 @@ The advantage peaks near γ_extra ≈ 0.5–1.0 and collapses at very high rates
 ```
 BH/
 ├── bh.py                    # Complete simulation package
+├── bh_hardening.py          # Exhaustive subset ranking + target robustness tests
 ├── run_all.sh               # AWS batch script
 ├── test_bh.py               # Core physics regression tests (pytest)
 ├── test_new_experiments.py  # Selector sweep, dis_amp, inhomogeneous, gamma-scan tests
+├── cover_letter.txt         # PRA submission cover letter
 ├── paper.tex                # Manuscript (REVTeX 4.2 / PRA format)
 ├── refs.bib                 # BibTeX references
 ├── paper.pdf                # Compiled manuscript
 └── outputs/                 # Generated outputs (not tracked in git)
+    ├── bh_hardening/        # Exhaustive subset + robustness CSVs, summary JSON, figures
     ├── checkpoints/         # Per-condition JSON checkpoints (resume on interruption)
     ├── data/                # config.json, results CSVs
-    ├── figures/             # PDF/PNG figures (including fig4, fig5)
+    ├── figures/             # PDF/PNG figures (fig1–fig5)
     └── tables/              # LaTeX tables
 ```
 
