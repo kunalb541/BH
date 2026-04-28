@@ -608,6 +608,116 @@ def regime_summary(susc_rows, subset_rows, robust_rows):
 
 
 # ===========================================================================
+# NMAX TRUNCATION CHECK
+# ===========================================================================
+
+def test_nmax_truncation(L, JU_list, tau_list, nmax_list=(3, 4)):
+    """
+    Check whether qualitative results (regime ordering, top-Fi subset rank)
+    are stable under nmax truncation.
+
+    For each (L, J/U, nmax): compute Fi, top-Fi subset, exhaustive percentile.
+    Report whether nmax=4 preserves sign pattern and top-quartile ranking.
+    """
+    rows = []
+
+    for nmax in nmax_list:
+        for ju in JU_list:
+            U   = 1.0
+            J   = ju * U
+            N   = filling(L)
+            basis   = build_basis(L, N, nmax)
+            idx_map = basis_index(basis)
+            D       = len(basis)
+
+            H      = build_hamiltonian(L, J, U, nmax, basis, idx_map)
+            n_ops  = [number_op(i, D, basis) for i in range(L)]
+            n_diags  = np.array([np.diag(nop) for nop in n_ops], dtype=np.float64)
+            n2_diags = n_diags ** 2
+
+            liouv_base = build_liouvillian(H, n_ops, [GAMMA_BASE] * L)
+            site_diss  = [_make_site_dissipator(n_ops[i], D) for i in range(L)]
+
+            eigvals, eigvecs = np.linalg.eigh(H)
+            psi0     = eigvecs[:, 0]
+            rho0     = np.outer(psi0, psi0.conj())
+            rho_burn = evolve_rho(rho0, liouv_base, BURN_IN)
+            rho_diag = np.real(np.diag(rho_burn))
+
+            Fi       = _fast_variances(rho_diag, n_diags, n2_diags)
+            occ_burn = _fast_expectations(rho_diag, n_diags)
+            k        = k_sites(L)
+
+            top_fi_subset = tuple(sorted(np.argsort(Fi)[-k:]))
+            all_subsets   = list(itertools.combinations(range(L), k))
+            n_subsets     = len(all_subsets)
+
+            # Make a lightweight cond dict for evolve_with_extra
+            cond = dict(rho_burn=rho_burn, liouv_base=liouv_base,
+                        site_diss=site_diss, n_diags=n_diags, L=L,
+                        Fi=Fi, occ_burn=occ_burn)
+
+            for tau in tau_list:
+                rho_base_t = evolve_rho(rho_burn, liouv_base, tau)
+                occ_base_t = occ_from_rho(rho_base_t, cond)
+
+                vals_clip = np.zeros(n_subsets)
+                desc = f"  nmax={nmax} J/U={ju:.2f} tau={tau:.0f}"
+                for sidx, subset in enumerate(tqdm(all_subsets, desc=desc,
+                                                   leave=False, ncols=80)):
+                    rho_s = evolve_with_extra(cond, list(subset), tau)
+                    occ_s = occ_from_rho(rho_s, cond)
+                    diff  = occ_burn - occ_s
+                    vals_clip[sidx] = sum(max(0.0, diff[i]) for i in subset)
+
+                fi_idx     = all_subsets.index(top_fi_subset)
+                percentile = float(100.0 * np.mean(vals_clip <= vals_clip[fi_idx]))
+                fi_val     = float(vals_clip[fi_idx])
+                mean_val   = float(vals_clip.mean())
+
+                rows.append(dict(
+                    L=L, N=N, nmax=nmax, J_over_U=ju, tau=tau, k=k,
+                    D=D, n_subsets=n_subsets,
+                    fi_subset=list(top_fi_subset),
+                    Fi=Fi.tolist(),
+                    fi_val_clip=fi_val,
+                    mean_clip=mean_val,
+                    gap_clip=fi_val - mean_val,
+                    percentile_clip=percentile,
+                    top_fi_site=int(np.argmax(Fi)),
+                ))
+
+    return rows
+
+
+def print_nmax_summary(rows):
+    """Print compact comparison table nmax=3 vs nmax=4."""
+    df = pd.DataFrame([{k: v for k, v in r.items() if not isinstance(v, list)}
+                       for r in rows])
+    print("\n" + "=" * 70)
+    print("NMAX TRUNCATION CHECK  (L=6, tau=3)")
+    print("=" * 70)
+    sub = df[df["tau"] == 3].sort_values(["J_over_U", "nmax"])
+    print(sub[["nmax", "J_over_U", "D", "percentile_clip", "gap_clip",
+               "top_fi_site"]].to_string(index=False))
+    print()
+    # Sign stability: does nmax=3 and nmax=4 agree on beneficial/harmful?
+    for ju in sorted(df["J_over_U"].unique()):
+        for tau in sorted(df["tau"].unique()):
+            vals = {}
+            for nmax in sorted(df["nmax"].unique()):
+                row = df[(df["J_over_U"] == ju) & (df["tau"] == tau) &
+                         (df["nmax"] == nmax)]
+                if len(row):
+                    vals[nmax] = row.iloc[0]["gap_clip"]
+            if len(vals) == 2:
+                agree = (np.sign(vals[3]) == np.sign(vals[4]))
+                print(f"  J/U={ju:.2f} tau={tau}: "
+                      f"gap nmax3={vals[3]:+.5f}  nmax4={vals[4]:+.5f}  "
+                      f"sign_agree={'YES' if agree else 'NO'}")
+
+
+# ===========================================================================
 # MAIN
 # ===========================================================================
 
@@ -631,6 +741,10 @@ def parse_args():
                    help="skip sanity checks (faster)")
     p.add_argument("--no-test2", action="store_true",
                    help="skip exhaustive subset ranking (saves time if only susceptibility needed)")
+    p.add_argument("--nmax-check", action="store_true",
+                   help="run nmax=3 vs nmax=4 truncation check at L=6")
+    p.add_argument("--nmax-list", nargs="+", type=int, default=[3, 4],
+                   help="nmax values to compare in truncation check (default: 3 4)")
     return p.parse_args()
 
 
@@ -742,6 +856,49 @@ def main():
             fig_subset_rank_heatmap(all_subset, outdir)
         if all_robust:
             fig_target_robustness(all_robust, outdir)
+
+    # ---------------------------------------------------------------------------
+    # NMAX truncation check
+    # ---------------------------------------------------------------------------
+    if args.nmax_check:
+        # nmax truncation is only binding when N > nmax for some site, i.e. N >= nmax+1.
+        # At half-filling N=L//2: L=6 N=3, L=7 N=3 are unaffected (max occupation=N<=3).
+        # L=8 N=4 IS affected: nmax=3 excludes states with a site holding 4 bosons (D=322→330).
+        # We run L=8 only; L=6/7 checks would be trivially identical and misleading.
+        print(f"\n{'─'*50}")
+        print(f"  [nmax check] L=8 N=4 (binding case), nmax={args.nmax_list}, "
+              f"J/U={{0.12,0.30,0.40}}, tau={{1,2,3}}")
+        print(f"  Note: L=6,7 (N=3) are unaffected by nmax 3→4 (same basis D=56,84).")
+        nmax_rows = test_nmax_truncation(
+            L=8,
+            JU_list=[0.12, 0.30, 0.40],
+            tau_list=[1, 2, 3],
+            nmax_list=args.nmax_list,
+        )
+        # Save
+        df_nmax = pd.DataFrame(
+            [{k: v for k, v in r.items() if not isinstance(v, list)} for r in nmax_rows]
+        )
+        df_nmax.to_csv(outdir / "nmax_truncation_results.csv", index=False)
+        print(f"  [saved] nmax_truncation_results.csv")
+        print_nmax_summary(nmax_rows)
+        # Persist to summary
+        nmax_sign_stable = all(
+            np.sign(
+                df_nmax[(df_nmax["J_over_U"] == ju) & (df_nmax["tau"] == tau) &
+                        (df_nmax["nmax"] == args.nmax_list[0])]["gap_clip"].values[0]
+            ) == np.sign(
+                df_nmax[(df_nmax["J_over_U"] == ju) & (df_nmax["tau"] == tau) &
+                        (df_nmax["nmax"] == args.nmax_list[-1])]["gap_clip"].values[0]
+            )
+            for ju in [0.12, 0.30, 0.40]
+            for tau in [1, 2, 3]
+            if len(df_nmax[(df_nmax["J_over_U"] == ju) & (df_nmax["tau"] == tau) &
+                           (df_nmax["nmax"] == args.nmax_list[0])]) > 0
+            and len(df_nmax[(df_nmax["J_over_U"] == ju) & (df_nmax["tau"] == tau) &
+                            (df_nmax["nmax"] == args.nmax_list[-1])]) > 0
+        )
+        print(f"\n  nmax sign stability (all conditions): {nmax_sign_stable}")
 
     print("\n✓ All hardening tests complete.")
     print(f"  Outputs: {outdir}")
