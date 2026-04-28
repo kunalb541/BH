@@ -71,6 +71,12 @@ intervention sites in the positive pocket ($J/U\geq0.30$), and this
 advantage is not reducible to geometric centrality, shell position, mean
 occupation, or disorder amplitude, while surviving the tested deterministic
 symmetry-breaking controls.
+Because the systems are small enough for exhaustive enumeration, we further
+rank the $\Fi$-selected subset against all $\binom{L}{k}$ possible
+intervention subsets: in the positive-pocket regime it lies at the top of
+the subset-response distribution at every tested $(L,\tau)$ pair, and the
+conclusion survives signed, absolute, and redistribution-based target
+definitions.
 \end{abstract}
 
 \maketitle
@@ -577,6 +583,68 @@ choice is not a tuning artefact.}
 \label{fig:tilt_gammascan}
 \end{figure}
 
+\subsection{Exhaustive subset ranking and target robustness}
+\label{sec:exhaustive}
+
+The comparison against 100 sampled random controls establishes that
+the $\Fi$-selected subset outperforms a matched-budget random baseline,
+but does not bound its rank among \emph{all} possible subsets.
+Because the Hilbert spaces studied here are small enough for exhaustive
+enumeration, we evaluated every $\binom{L}{k}$ possible $k$-site subset
+($k=\lceil L/3\rceil$; $\binom{6}{2}=15$, $\binom{7}{3}=35$,
+$\binom{8}{3}=56$ subsets) under the paper's exact Lindblad protocol,
+and ranked the $\Fi$-selected subset by its clipped local-loss percentile.
+
+\begin{table}[tbp]
+\centering
+\caption{Percentile rank of the $\Fi$-selected subset among all
+$\binom{L}{k}$ intervention subsets, clipped local-loss metric.
+100 = globally optimal (tied or unique).}
+\label{tab:exhaustive}
+\begin{ruledtabular}
+\begin{tabular}{llrrr}
+$L$ & $J/U$ & $\tau=1$ & $\tau=2$ & $\tau=3$ \\
+\hline
+6 & 0.30 & 100 & 100 & 100 \\
+6 & 0.40 & 100 & 100 & 100 \\
+7 & 0.30 & 100 & 100 & 100 \\
+7 & 0.40 & 100 & 100 & 100 \\
+8 & 0.30 & 100 & 100 & 100 \\
+8 & 0.40 &  98 &  98 &  98 \\
+\hline
+6 & 0.20 &  80 &  87 &  87 \\
+7 & 0.20 &  29 &  46 &  66 \\
+8 & 0.20 &  34 &  68 &  71 \\
+\hline
+6 & 0.12 &  40 &  40 &  40 \\
+7 & 0.12 &  29 &  29 &  29 \\
+8 & 0.12 &  21 &  21 &  21 \\
+\end{tabular}
+\end{ruledtabular}
+\end{table}
+
+Table~\ref{tab:exhaustive} reports the results.
+In the positive-pocket regime ($J/U\geq0.30$), the $\Fi$-selected subset
+is globally optimal or tied for optimal in all $L\in\{6,7\}$ conditions
+and at $L=8$, $J/U=0.30$, and remains in the 98th percentile at
+$L=8$, $J/U=0.40$ (one of 56 subsets ties or exceeds it).
+The crossover band ($J/U=0.20$) yields 29--87th percentile depending on
+$L$ and $\tau$, consistent with the regime's size- and horizon-sensitive
+character.
+The negative regime ($J/U=0.12$) gives 21--40th percentile---the
+$\Fi$-selected subset actively ranks below the median, consistent with
+the harmful-regime result.
+
+We also verified that the positive-pocket advantage is not produced by
+the positive-part clipping in the target metric.
+For every $(L,\tau)$ condition with $J/U\geq0.30$: the signed local-change
+gap (no clipping floor) is positive and exceeds the clipped gap; the
+absolute local-change gap is positive; and the global redistribution gap
+$\sum_j|\langle\nop_j\rangle_{\mathrm{targeted}}-\langle\nop_j\rangle_{\mathrm{baseline}}|$
+is positive.
+The clipping is conservative, not inflating: removing it yields a
+\emph{larger} advantage in every tested positive-pocket condition.
+
 \section{Discussion}
 \label{sec:disc}
 
@@ -588,6 +656,10 @@ $J/U\geq0.30$: targeting the highest-$\Fi$ sites with additional dephasing
 produces more local future occupation loss than matched-budget random
 targeting, robustly across all tested $L\in\{6,7,8\}$ and
 $\tau\in\{1,2,3\}$, with the effect increasing with system size.
+Exhaustive enumeration of all $\binom{L}{k}$ intervention subsets
+further shows that the $\Fi$-selected subset lies at the top of the
+subset-response distribution in the positive pocket, and this advantage
+survives signed, absolute, and redistribution-based target definitions.
 The handle is regime-dependent---harmful at $J/U=0.12$, transitional near
 $J/U\approx0.20$---and its advantage is not reducible to geometric
 centrality, shell position, mean occupation, or disorder amplitude.
@@ -602,12 +674,12 @@ its main result is the regime-dependent identification of high-$\Fi$ sites
 as effective causal handles.
 
 \paragraph*{What is not claimed.}
-We do not claim that high-$\Fi$ targeting is optimal among all possible
-intervention strategies; that the effect extends to all coupling regimes
-or all system sizes; that the mechanism generalises to other quantum
-systems; or that the occupation-variance handle corresponds to any
-equilibrium observable.
-No thermodynamic-limit or universal-handle claims are made.
+The exhaustive enumeration establishes near-optimality within the
+finite-size systems studied; we do not claim this extends to the
+thermodynamic limit, to all coupling regimes, or to other quantum systems.
+No claim is made that $\gamma_{\mathrm{extra}}=0.5$ is a globally
+optimal dephasing rate, or that the occupation-variance handle corresponds
+to any equilibrium observable.
 
 \paragraph*{Scope and limitations.}
 The Hilbert-space dimension of the fixed-$N$ sector grows combinatorially
