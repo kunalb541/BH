@@ -11,12 +11,16 @@ Companion code for the paper submitted to *Physical Review A*.
 
 In a 1D open Bose–Hubbard chain under uniform Lindblad dephasing, sites develop spatially heterogeneous local occupation variance F_i = ⟨n_i²⟩ − ⟨n_i⟩². This paper tests whether targeting additional dephasing at the highest-F_i sites produces measurably more local occupation loss than applying the same dephasing budget to randomly chosen sites.
 
+**"Redistribution handle" is used operationally:** a site selector is called a redistribution handle if applying an explicit additional Lindblad dephasing term at the selected sites produces a statistically distinguishable future response from a matched-budget random-site intervention, with the pre-intervention state held fixed. This is an intervention contrast inside a fully specified dynamical model, not statistical causal identification from observational data.
+
 **Protocol:**
 1. Evolve the ground state under uniform baseline dephasing (γ = 0.1) for burn-in t_burn = 5 to build heterogeneous fluctuation structure.
 2. Compute F_i; select the top-k sites (k = ⌈L/3⌉).
 3. **Targeted arm**: apply extra dephasing γ_extra = 0.5 at the k high-F_i sites.
 4. **Random arm**: apply the same total budget (k × γ_extra) to k randomly chosen sites (100 independent draws).
 5. Compare local occupation loss ∑_{i∈S} max(0, ⟨n_i⟩_t − ⟨n_i⟩_{t+τ}) at the intervention sites.
+
+Because the targeted arm is deterministic for a fixed condition, the bootstrap CI (1000 resamples) reflects trial-level variability in the matched random-control arm, not uncertainty over independent targeted realizations.
 
 All evolution is **exact Lindblad** (no approximations, no Trotter decomposition, no stochastic unravelling).
 
@@ -30,9 +34,11 @@ Three regimes across J/U:
 
 | Regime | J/U | Result |
 |--------|-----|--------|
-| **Negative** | 0.12 | Targeted produces *less* loss than random — 95% CI strictly below zero at all tested L, τ |
+| **Low-coupling** | 0.12 | Near-zero to weakly harmful — 95% CI below zero at the paper's burn-in, small in magnitude (|mean| ≲ 0.01), partly burn-in-sensitive at L=6 |
 | **Crossover** | ≈ 0.20 | Size- and horizon-sensitive; not robustly positive or negative |
 | **Positive pocket** | ≥ 0.30 | Targeted > random — 95% CI strictly above zero at all tested L, τ |
+
+The J/U ≈ 0.20 boundary is a finite-size dynamical crossover in the Lindblad response, not the thermodynamic Mott–superfluid transition.
 
 Best effects at J/U = 0.40, τ = 3, growing with system size:
 
@@ -85,7 +91,7 @@ All C(L,k) intervention subsets evaluated exactly (C(6,2)=15, C(7,3)=35, C(8,3)=
 | 8 | 0.30 | 100% | 100% | 100% |
 | 8 | 0.40 |  98% |  98% |  98% |
 
-In the positive pocket (J/U ≥ 0.30) the F_i-selected subset is globally optimal or tied at every tested (L, τ), except L=8, J/U=0.40 where it is 98th percentile (1 of 56 subsets ties/beats it). Negative regime: 21–40th percentile. Crossover: 29–87th percentile.
+In the positive pocket (J/U ≥ 0.30) the F_i-selected subset is globally optimal or tied at every tested (L, τ), except L=8, J/U=0.40 where it is 98th percentile (1 of 56 subsets ties/beats it). Low-coupling regime: 21–40th percentile. Crossover: 29–87th percentile.
 
 ### Target robustness
 
@@ -98,6 +104,23 @@ Spearman(F_i, χ_redist) > 0 in every condition (all L, J/U, τ, δγ). Spearman
 ### nmax truncation check
 
 L=8, N=4 repeated with nmax=4 (D=322→330, the only binding case). Regime ordering, sign pattern, and top-F_i percentile tier unchanged. Gap shifts < 2×10⁻⁴.
+
+### Burn-in sensitivity
+
+Positive-pocket conclusion (J/U=0.40) is stable under 0.5×–2× burn-in variation at both L=6 and L=8 (gap positive, F_i subset in top quartile or above). Low-coupling response (J/U=0.12) is much smaller in magnitude (|gap| ≲ 0.006) and partly burn-in-sensitive at L=6.
+
+| L | J/U | 0.5× gap | 1.0× gap | 2.0× gap | Pct. range | Sign stable |
+|---|-----|----------|----------|----------|------------|-------------|
+| 6 | 0.12 | −0.002 | −0.002 | +0.003 | 40–80% | no |
+| 6 | 0.40 | +0.064 | +0.047 | +0.012 | 87–100% | yes |
+| 8 | 0.12 | −0.005 | −0.006 | <0.001 | 21–54% | yes |
+| 8 | 0.40 | +0.065 | +0.073 | +0.009 | 80–100% | yes |
+
+### Spatial response (Fig. 3)
+
+Two-panel comparison at L=6, τ=2:
+- **(a) Low-coupling regime (J/U=0.12):** high-F_i selected sites (2,3) carry near-zero occupation change; the redistribution signal falls at unselected sites 1 and 4, where targeting provides no advantage.
+- **(b) Positive pocket (J/U=0.30):** targeted intervention drives deeper occupation redistribution across non-selected sites than random, consistent with the redistribution-handle interpretation.
 
 ---
 
@@ -140,7 +163,7 @@ BH/
     ├── bh_hardening/        # Exhaustive subset, robustness, susceptibility, nmax CSVs + figures
     ├── checkpoints/         # Per-condition JSON checkpoints (resume on interruption)
     ├── data/                # config.json, results CSVs
-    ├── figures/             # PDF/PNG figures (fig1–fig5)
+    ├── figures/             # PDF/PNG figures (fig1–fig5 + fig3 two-panel)
     └── tables/              # LaTeX tables
 ```
 
@@ -218,11 +241,38 @@ python bh_hardening.py --full --delta-gamma 0.05 0.1 0.2
 # nmax truncation check — L=8 nmax=3 vs nmax=4 (~15 min)
 python bh_hardening.py --nmax-check --no-test2 --skip-sanity --no-figures
 
+# Burn-in sensitivity check — L=6,8 × J/U=0.12,0.40 × multipliers 0.5,1.0,2.0
+python bh_hardening.py --burnin-check --burnin-L 6 8 --burnin-JU 0.12 0.40 \
+  --burnin-multipliers 0.5 1.0 2.0 --burnin-tau 3
+
 # Quick smoke test — L=6 only (~2 min)
 python bh_hardening.py --quick
 ```
 
-Outputs → `outputs/bh_hardening/`: `susceptibility_results.csv`, `subset_ranking_results.csv`, `target_robustness_results.csv`, `nmax_truncation_results.csv`, `summary_hardening.json`, figures.
+Outputs → `outputs/bh_hardening/`: `susceptibility_results.csv`, `subset_ranking_results.csv`, `target_robustness_results.csv`, `nmax_truncation_results.csv`, `burnin_sensitivity_results.csv`, `summary_hardening.json`, figures.
+
+### Regenerate Fig. 3 (two-panel spatial response)
+
+After running the primary sweep, Fig. 3 is regenerated automatically by `make_figures`. To regenerate standalone from saved CSV data:
+
+```bash
+python3 -c "
+import sys, json, ast
+import pandas as pd
+sys.path.insert(0, '.')
+import bh
+df = pd.read_csv('outputs/data/results_L6.csv')
+all_res = []
+for (L, ju), grp in df.groupby(['L', 'J_over_U']):
+    results = [{'J_over_U': r.J_over_U, 'tau': r.tau, 'mean_diff': r.mean_diff,
+                'ci_lo': r.ci_lo, 'ci_hi': r.ci_hi,
+                'selected': ast.literal_eval(r.selected),
+                'mechanism': ast.literal_eval(r.mechanism)} for _, r in grp.iterrows()]
+    all_res.append({'L': int(L), 'results': results})
+cfg = json.load(open('outputs/data/config.json'))
+bh.make_figures(all_res, cfg)
+"
+```
 
 ### Compile the paper
 
@@ -249,14 +299,14 @@ pdflatex paper.tex && bibtex paper && pdflatex paper.tex && pdflatex paper.tex
 | `run_inhomogeneous_experiment(...)` | Deterministic asymmetry experiment |
 | `run_gamma_scan_experiment(...)` | γ_extra robustness scan |
 | `make_tables(...)` | Generate LaTeX-ready tables |
-| `make_figures(...)` | Generate PDF/PNG figures |
+| `make_figures(...)` | Generate PDF/PNG figures (fig3 is two-panel: low-coupling + positive-pocket) |
 
 **Key implementation notes:**
 - `expm_multiply` is exact to floating-point precision (Al-Mohy & Higham 2011).
 - Dissipator diagonal: for L_i = n_i, the D²×D² dissipator is diagonal. Stored as a 1D array — avoids OOM at L=6,7.
 - Parallel disorder realizations use `concurrent.futures.ProcessPoolExecutor` with `as_completed` (deadlock-free).
 - Per-realization checkpoint resume: each condition writes a JSON file; `--resume` skips existing files.
-- Bootstrap: 1000 resamples, vectorised NumPy, per condition.
+- Bootstrap: 1000 resamples, vectorised NumPy, per condition. Because the targeted arm is deterministic, the CI measures random-control arm variability.
 
 **Selectors compared in `run_selector_sweep_realization`:**
 
@@ -277,10 +327,12 @@ pdflatex paper.tex && bibtex paper && pdflatex paper.tex && pdflatex paper.tex
 ## What is not claimed
 
 - That high-F_i targeting is **optimal** among all possible selectors.
-- That the effect holds at all J/U — it reverses at J/U = 0.12 and is transitional near J/U ≈ 0.20.
+- That the effect holds at all J/U — it is near-zero to weakly harmful at J/U = 0.12 and transitional near J/U ≈ 0.20.
 - That results extend to the **thermodynamic limit** — exact Lindblad is feasible through L = 8; larger sizes require approximate methods (e.g., MPO Lindblad).
+- That the J/U ≈ 0.20 boundary corresponds to the thermodynamic Mott–superfluid transition — in these small open chains it is a finite-size dynamical crossover, not a sharp equilibrium phase boundary.
 - That fi is independent of geometry in the **clean, symmetric chain** — reflection symmetry forces F_i to peak at geometric-center sites, so fi = geo identically there. Symmetry breaking (disorder or inhomogeneous potential) is required for separation.
 - That dis_amp is the only alternative explanation — it is a strong representative control, not an exhaustive one.
+- That a full microscopic account of the crossover (e.g., Liouvillian spectral decomposition) has been provided — the susceptibility analysis establishes the redistribution structure empirically; spectral mechanism is left for future work.
 
 ---
 
