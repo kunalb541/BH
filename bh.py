@@ -672,24 +672,47 @@ def make_figures(all_res, cfg):
         fig.tight_layout()
         savefig(fig, "fig2_robustness")
 
-    mech_res = next((r for res in all_res if res["L"] == 6
+    # Fig. 3: two-panel site-resolved occupation change.
+    # Panel (a): low-coupling regime  J/U=0.12, L=6, tau=2
+    # Panel (b): positive pocket       J/U=0.30, L=6, tau=2
+    def _pick_mech(ju, tau_val):
+        return next((r for res in all_res if res["L"] == 6
                      for r in res["results"]
-                     if abs(r["J_over_U"] - 0.30) < 0.01
-                     and abs(r["tau"] - 2.0) < 0.1), None)
-    if mech_res is not None:
-        Lm   = 6; sel = mech_res["selected"]; nt = len(mech_res["mechanism"])
-        d_tgt = np.mean([md["delta_tgt"] for md in mech_res["mechanism"]], axis=0)
-        d_rnd = np.mean([md["delta_rnd"] for md in mech_res["mechanism"]], axis=0)
-        fig, ax = plt.subplots(figsize=(7, 4.5))
-        x = np.arange(Lm); w = 0.35
-        ax.bar(x - w/2, d_tgt, w, label="Targeted", color="C0", alpha=0.8)
-        ax.bar(x + w/2, d_rnd, w, label="Random",   color="C1", alpha=0.8)
-        for s in sel:
-            ax.axvspan(s - 0.5, s + 0.5, alpha=0.12, color="blue")
-        ax.axhline(0, color="gray", lw=0.6, ls=":")
-        ax.set_xlabel("Site index"); ax.set_ylabel(r"$\Delta\langle n_i \rangle$")
-        ax.set_title(r"Site-resolved occupation change ($J/U=0.30$, $L=6$, $\tau=2$)")
-        ax.set_xticks(x); ax.legend()
+                     if abs(r["J_over_U"] - ju) < 0.01
+                     and abs(r["tau"] - tau_val) < 0.1), None)
+
+    mech_neg = _pick_mech(0.12, 2.0)
+    mech_pos = _pick_mech(0.30, 2.0)
+
+    if mech_neg is not None and mech_pos is not None:
+        Lm = 6; x = np.arange(Lm); w = 0.35
+        panel_specs = [
+            (mech_neg, r"(a) Low-coupling regime ($J/U=0.12$, $\tau=2$)"),
+            (mech_pos, r"(b) Positive pocket ($J/U=0.30$, $\tau=2$)"),
+        ]
+        fig, axes = plt.subplots(1, 2, figsize=(12, 4.5), sharey=False)
+        for ax, (mres, title) in zip(axes, panel_specs):
+            sel   = mres["selected"]
+            d_tgt = np.mean([md["delta_tgt"] for md in mres["mechanism"]], axis=0)
+            d_rnd = np.mean([md["delta_rnd"] for md in mres["mechanism"]], axis=0)
+            ax.bar(x - w/2, d_tgt, w, label="Targeted", color="C0", alpha=0.8)
+            ax.bar(x + w/2, d_rnd, w, label="Random",   color="C1", alpha=0.8)
+            for s in sel:
+                ax.axvspan(s - 0.5, s + 0.5, alpha=0.12, color="blue",
+                           label="_nolegend_")
+            ax.axhline(0, color="gray", lw=0.6, ls=":")
+            ax.set_xlabel("Site index")
+            ax.set_ylabel(r"$\Delta\langle n_i \rangle$")
+            ax.set_title(title)
+            ax.set_xticks(x)
+            ax.legend(fontsize=9)
+        # mark selected sites in legend for panel (a)
+        from matplotlib.patches import Patch
+        for ax in axes:
+            handles, labels = ax.get_legend_handles_labels()
+            patch = Patch(facecolor="blue", alpha=0.18, label="Selected sites")
+            ax.legend(handles=handles + [patch], fontsize=9)
+        fig.tight_layout()
         savefig(fig, "fig3_mechanism")
 
 

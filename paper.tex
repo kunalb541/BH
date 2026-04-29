@@ -521,39 +521,44 @@ $(L,\tau)$ combinations, consistently defining the positive pocket boundary.
 
 \subsection{Spatial response pattern}
 
-Fig.~\ref{fig:mechanism} shows the site-resolved occupation change under
-targeted versus random intervention at $J/U=0.30$, $L=6$, $\tau=2$.
+Fig.~\ref{fig:mechanism} shows the site-resolved occupation change at
+$L=6$, $\tau=2$ for both regimes side by side: the low-coupling regime
+(panel a, $J/U=0.12$) and the positive pocket (panel b, $J/U=0.30$).
 The bars show the mean site-resolved occupation change under the
 deterministic targeted intervention and averaged across the 100
 matched-budget random interventions.
 
-The observed pattern is consistent with a nonlocal, redistributive
-response.
-Under targeted intervention, the selected sites (shaded) tend to show
-\emph{less} negative occupation change than under random intervention:
-selected-site loss is reduced relative to random targeting.
-At the same time, non-selected sites show increased occupation loss under
-targeted intervention.
-The net effect is that the intervention changes the spatial pattern of
-occupation change across the chain rather than simply amplifying loss at
-the targeted sites themselves.
-
-This is the opposite of what a purely local-instability mechanism would
-predict, in which extra dephasing at a high-$\Fi$ site would increase loss
-specifically at that site.
-The data are more consistent with a picture in which perturbing high-$\Fi$
-sites alters the subsequent spatial distribution of occupation change
-across the chain.
+The positive-pocket panel (b) is consistent with a nonlocal, redistributive
+response: under targeted intervention, the selected central sites (shaded)
+show less negative occupation change than under random intervention, while
+non-selected sites show increased occupation loss, indicating that the
+intervention redistributes occupation across the chain rather than simply
+amplifying local loss at the targeted sites.
+The low-coupling panel (a) shows the regime-dependent contrast directly:
+at $J/U=0.12$, the high-$\Fi$ selected sites (2,3) carry near-zero
+occupation change, while sites 1 and 4---outside the selected set---carry
+the dominant redistribution signal.
+Targeting the variance handle therefore perturbs the same structural
+degree of freedom in both regimes, but whether that perturbation leads to
+net local loss at the selected sites or redistributes occupation in a
+non-beneficial direction depends on the coupling strength.
 
 \begin{figure}[tbp]
 \centering
-\includegraphics[width=0.85\linewidth]{fig3_mechanism.pdf}
-\caption{Mean site-resolved occupation change under the targeted
-intervention and across matched-budget random interventions
-($J/U=0.30$, $L=6$, $\tau=2$).
-Negative values correspond to occupation loss.
-Shaded bands mark selected sites.
-The spatial response is consistent with nonlocal redistribution.}
+\includegraphics[width=\linewidth]{fig3_mechanism.pdf}
+\caption{Mean site-resolved occupation change ($\Delta\langle n_i\rangle$,
+$L=6$, $\tau=2$) under targeted versus matched-budget random intervention,
+shown for both regimes.
+\textbf{(a)} Low-coupling regime ($J/U=0.12$): high-$\Fi$ selected sites
+(shaded, sites 2--3) show near-zero response; the large occupation
+redistribution occurs at unselected sites 1 and 4, where targeting
+provides no advantage.
+\textbf{(b)} Positive pocket ($J/U=0.30$): targeted intervention drives
+deeper occupation redistribution than random intervention across the
+non-selected sites, consistent with the redistribution-handle
+interpretation.
+Negative values correspond to occupation loss; shaded bands mark selected
+sites.}
 \label{fig:mechanism}
 \end{figure}
 
