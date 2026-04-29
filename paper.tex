@@ -133,10 +133,13 @@ same total dephasing budget to randomly chosen sites.
 The question is about the interventional accessibility of future dynamical
 outcomes through structurally targeted dephasing, not about the
 equilibrium phase diagram.
-Here ``handle'' denotes an operational intervention comparison under fixed
-Lindblad dynamics---selectively changing local dephasing rates and
-measuring the response---not statistical causal identification from
-observational data.
+Here ``handle'' is used operationally: a site selector is called a
+redistribution handle if applying an explicit additional Lindblad
+dephasing term at the selected sites produces a statistically
+distinguishable future response from a matched-budget random-site
+intervention, with the pre-intervention state held fixed.
+This is an intervention contrast inside a fully specified dynamical
+model, not statistical causal identification from observational data.
 
 In the clean, reflection-symmetric chain the high-$\Fi$ sites coincide with
 the geometrically central sites, so the primary sweep alone cannot
@@ -188,6 +191,11 @@ a sparse CSR matrix; time evolution uses the Krylov-based
 \texttt{expm\_multiply} path, and the per-trial modified Liouvillian
 is handled as a lightweight linear operator that avoids allocating a
 new sparse matrix per trial.
+The $n_{\max}=3$ cutoff is binding only at $L=8$, $N=4$; a truncation
+check repeating those conditions at $n_{\max}=4$ ($D=322\to330$) left
+the regime ordering, sign pattern, and top-$\Fi$ subset-percentile tier
+unchanged, with local-loss gap shifts below $2\times10^{-4}$
+(see Discussion).
 
 \subsection{Lindblad dynamics}
 
@@ -319,8 +327,14 @@ A 95\% bootstrap confidence interval (1000 resamples, trial-level
 resampling) is constructed for each condition.
 The decision rule is that a condition passes if the lower bound of the
 95\% CI exceeds zero.
-Bootstrap CIs quantify uncertainty over random-control draws and are used
-descriptively.
+Because the targeted arm is deterministic for a fixed condition (the
+post-burn-in state and the $\Fi$ selector are both fixed), the bootstrap
+CI reflects trial-level variability in the matched random-control arm,
+not uncertainty over independent targeted realizations.
+The interval should therefore be read as uncertainty in the
+targeted-minus-random intervention contrast induced by random-site
+selection, not as a standard two-sample confidence interval.
+Bootstrap CIs are used descriptively throughout.
 Because multiple conditions are inspected, isolated CI crossings are not
 interpreted as standalone discoveries; the main claims rest on structured
 regime consistency across $L$ and $\tau$, exhaustive subset enumeration
@@ -858,6 +872,11 @@ thermodynamic limit, to all coupling regimes, or to other quantum systems.
 No claim is made that $\gamma_{\mathrm{extra}}=0.5$ is a globally
 optimal dephasing rate, or that the occupation-variance handle corresponds
 to any equilibrium observable.
+The observed regime boundary near $J/U\approx0.20$ should not be
+identified with the thermodynamic Mott--superfluid transition.
+In these small open chains under dissipation it is best interpreted as a
+finite-size dynamical crossover in the response of the Lindblad evolution,
+not as a sharp equilibrium phase boundary.
 
 \paragraph*{Scope and limitations.}
 The Hilbert-space dimension of the fixed-$N$ sector grows combinatorially
