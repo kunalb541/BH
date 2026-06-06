@@ -57,15 +57,37 @@ thermodynamic limit. **No** Liouvillian-spectral / current-mode explanation yet
   `claude/happy-yalow-455c61`). The submission `paper.tex` on `main` (930 lines) is
   untouched.
 
-## 6. Next optional experiment
-Liouvillian / current-mode explanation of **why** D_S turns on (which slow
-non-stationary mode activates; J-scaling of the directed current via
-d⟨n_i⟩/dt ∝ J·Im⟨a†_i a_{i+1}⟩). This is explanatory deepening — **not required** to
-rescue the central mechanism, which is already earned.
+## 6. Step 3A — current / continuity explanation (EARNED, 2026-06-06)
+Directed self-drain **is** the time-integrated net outward particle current across the
+selected set's boundary. Continuity d⟨n_i⟩/dt = ⟨Ĵ_{i-1,i}⟩ − ⟨Ĵ_{i,i+1}⟩ holds exactly
+(∫ outward current reproduces D_S to ~1e-6), with the Hermitian bond-current operator
+Ĵ_{i,i+1} = −iJ(a†_i a_{i+1} − a†_{i+1} a_i) = 2J Im⟨a†_i a_{i+1}⟩.
+
+The **burn-in current divergence** of the F_i-set, C_S_burn = Σ_{i∈S}(⟨Ĵ_{i,i+1}⟩−⟨Ĵ_{i-1,i}⟩),
+predicts D_S and the handle:
+- clean L=6,7,8: ρ(C_S_burn, D_S) = 0.91/0.91/0.89; ρ(C_S_burn, handle) = 0.94/0.95/0.92.
+- tilt: ρ(C_S_burn, D_S) = +0.70 (handle ρ uninformative — saturated, no fail regime).
+- disorder: ρ(C_S_burn, D_S) = +0.75; ρ(C_S_burn, handle) = +0.72.
+
+**The crossover is a current reversal:** at low J/U the F_i-set carries net *inward*
+current and fills (C_S_burn<0, D_S<0, handle fails); in the pocket it flips to *outward*
+current and drains. J/U, tilt, and disorder are three routes to the same selected-site
+current structure — the control parameter is the directed current, not J/U.
+Caveats: predictor weaker under symmetry breaking (0.70–0.75 vs 0.89–0.91 clean); the
+robust signal is set-level (per-site burn-in current vs single-site R_ii is anti-correlated).
+
+## 7. Next science (not yet run)
+Liouvillian-mode deepening is now **optional** — the transport-language explanation
+suffices for the central claim. Open question for the deepest result: is directed
+self-drain **dephasing-specific or intervention-general**? Test a second intervention
+type (amplitude damping / local loss, injection, phase imprint) at L=6 first.
 
 ## Artifacts (this branch)
 - `mechanism_pilot.py` — clean-chain response-kernel pilot, L parametrized
   (sparse path forced for L≥7; exact, parity-checked).
 - `symbreak_diag.py` — tilt + disorder geometry-separation diagnostic.
 - `mechanism_parity_check.py` — confirms sparse==dense Liouvillian to ~1e-15.
-- `outputs/mechanism_pilot/*.csv` — pilot_results_L{6,7,8}.csv, symbreak_{tilt,disorder}.csv.
+- `current_mechanism.py` — Step 3A continuity/current diagnostic (clean L).
+- `current_symbreak.py` — Step 3A current diagnostic under tilt + disorder.
+- `outputs/mechanism_pilot/*.csv` — pilot_results_L{6,7,8}.csv, symbreak_{tilt,disorder}.csv,
+  current_mech_L{6,7,8}.csv, current_symbreak_{tilt,disorder}.csv.
