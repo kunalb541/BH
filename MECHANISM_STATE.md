@@ -76,11 +76,30 @@ current structure — the control parameter is the directed current, not J/U.
 Caveats: predictor weaker under symmetry breaking (0.70–0.75 vs 0.89–0.91 clean); the
 robust signal is set-level (per-site burn-in current vs single-site R_ii is anti-correlated).
 
-## 7. Next science (not yet run)
-Liouvillian-mode deepening is now **optional** — the transport-language explanation
-suffices for the central claim. Open question for the deepest result: is directed
-self-drain **dephasing-specific or intervention-general**? Test a second intervention
-type (amplitude damping / local loss, injection, phase imprint) at L=6 first.
+## 7. Step 3B — local detuning: mechanism generalizes beyond dephasing (2026-06-06)
+Coherent, N-conserving intervention `H → H + μ_extra Σ_{i∈S} n_i` (baseline dephasing
+unchanged), μ0 scan {0.1, 0.5, 1.0}. Clean L=6:
+- **Sign knob:** +μ drains (D_S>0), −μ fills (D_S<0) — clean reversal. D_S scales with μ0
+  (0.10/0.33/0.45). Magnitudes ~5–50× the dephasing D_S (detuning is a *directed push*,
+  not a throttle).
+- **Current mechanism generalizes:** ρ(C_S_burn, handle) = +0.90, ρ(C_S_burn, D_S) = +0.61,
+  ρ(F_i, single-site drain) = +0.83.
+- **Caveat:** clean chain has F_i = geo, so this proves the current/self-drain *law*
+  generalizes to coherent control, but NOT yet that *F_i-beyond-geometry* generalizes.
+  The detune-optimal selector slightly beats F_i (75 vs 50 percentile) — F_i is a
+  good-but-imperfect proxy under coherent control.
+
+Upgraded statement: directed self-drain is a **general local-transport-control** mechanism
+— dephasing throttles the current, detuning biases it — and in both the burn-in outward-
+current structure predicts which sites respond.
+
+## 8. Next science
+- **IMMEDIATE (in progress):** symmetry-broken detuning (tilt/disorder) — does F_i beat
+  geometry under coherent control as it does for dephasing? (resolves the clean-chain
+  F_i=geo degeneracy for detuning.)
+- **THEN:** amplitude damping / local loss (requires multi-N Hilbert extension; dissipative
+  gold-standard) — NOT next.
+- **OPTIONAL:** Liouvillian-mode deepening (which slow mode carries the current).
 
 ## Artifacts (this branch)
 - `mechanism_pilot.py` — clean-chain response-kernel pilot, L parametrized
@@ -89,5 +108,6 @@ type (amplitude damping / local loss, injection, phase imprint) at L=6 first.
 - `mechanism_parity_check.py` — confirms sparse==dense Liouvillian to ~1e-15.
 - `current_mechanism.py` — Step 3A continuity/current diagnostic (clean L).
 - `current_symbreak.py` — Step 3A current diagnostic under tilt + disorder.
+- `detune_probe.py` — Step 3B coherent local-detuning probe (clean L=6).
 - `outputs/mechanism_pilot/*.csv` — pilot_results_L{6,7,8}.csv, symbreak_{tilt,disorder}.csv,
-  current_mech_L{6,7,8}.csv, current_symbreak_{tilt,disorder}.csv.
+  current_mech_L{6,7,8}.csv, current_symbreak_{tilt,disorder}.csv, detune_probe_L6.csv.
