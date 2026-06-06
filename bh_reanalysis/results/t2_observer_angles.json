@@ -1,0 +1,1057 @@
+{
+  "per_L": {
+    "6": {
+      "n_cells": 12,
+      "n_within_pairs": 19,
+      "n_across_pairs": 47,
+      "median_within_angle": 0.02805472359096556,
+      "median_across_angle": 0.060284079280048405,
+      "ks_statistic": 0.8333333333333334,
+      "ks_pvalue": 1.4660151701412207e-50,
+      "empirical_q25": 0.013772619278595003,
+      "null_q25": 1.1746695626226678,
+      "left_tail_longer": true,
+      "P2.1_pass": true,
+      "P2.2_pass": false,
+      "P2.3_pass": true,
+      "within_pairs": [
+        {
+          "a": "F",
+          "b": "F_rank",
+          "angle": 1.5707963267948568
+        },
+        {
+          "a": "F",
+          "b": "F_centered",
+          "angle": 1.4901161193847656e-08
+        },
+        {
+          "a": "F",
+          "b": "F_zscore",
+          "angle": 1.4901161193847656e-08
+        },
+        {
+          "a": "F_rank",
+          "b": "F_centered",
+          "angle": 1.570796326794857
+        },
+        {
+          "a": "F_rank",
+          "b": "F_zscore",
+          "angle": 1.5707963267948566
+        },
+        {
+          "a": "F_centered",
+          "b": "F_zscore",
+          "angle": 1.4901161193847656e-08
+        },
+        {
+          "a": "dn_tgt",
+          "b": "dn_rnd_mean",
+          "angle": 0.013772619278595003
+        },
+        {
+          "a": "dn_tgt",
+          "b": "abs_dn_tgt",
+          "angle": 1.4901161193847656e-08
+        },
+        {
+          "a": "dn_tgt",
+          "b": "abs_dn_rnd_mean",
+          "angle": 0.028054723590969517
+        },
+        {
+          "a": "dn_tgt",
+          "b": "redist_tgt",
+          "angle": 2.1073424255447017e-08
+        },
+        {
+          "a": "dn_rnd_mean",
+          "b": "abs_dn_tgt",
+          "angle": 0.013772619278603064
+        },
+        {
+          "a": "dn_rnd_mean",
+          "b": "abs_dn_rnd_mean",
+          "angle": 0.029224144828167643
+        },
+        {
+          "a": "dn_rnd_mean",
+          "b": "redist_tgt",
+          "angle": 0.013772619278586942
+        },
+        {
+          "a": "abs_dn_tgt",
+          "b": "abs_dn_rnd_mean",
+          "angle": 0.02805472359096556
+        },
+        {
+          "a": "abs_dn_tgt",
+          "b": "redist_tgt",
+          "angle": 2.580956827951785e-08
+        },
+        {
+          "a": "abs_dn_rnd_mean",
+          "b": "redist_tgt",
+          "angle": 0.028054723590973475
+        },
+        {
+          "a": "gap",
+          "b": "gap_signed",
+          "angle": 0.04636283775200265
+        },
+        {
+          "a": "gap",
+          "b": "redist_gap",
+          "angle": 0.08838880667263035
+        },
+        {
+          "a": "gap_signed",
+          "b": "redist_gap",
+          "angle": 0.042972339652667
+        }
+      ],
+      "across_pairs": [
+        {
+          "a": "F",
+          "b": "dn_tgt",
+          "angle": 0.0
+        },
+        {
+          "a": "F",
+          "b": "dn_rnd_mean",
+          "angle": 0.013772619278603064
+        },
+        {
+          "a": "F",
+          "b": "abs_dn_tgt",
+          "angle": 2.1073424255447017e-08
+        },
+        {
+          "a": "F",
+          "b": "abs_dn_rnd_mean",
+          "angle": 0.02805472359098535
+        },
+        {
+          "a": "F",
+          "b": "redist_tgt",
+          "angle": 2.580956827951785e-08
+        },
+        {
+          "a": "F",
+          "b": "gap",
+          "angle": 0.060284079280048405
+        },
+        {
+          "a": "F",
+          "b": "gap_signed",
+          "angle": 0.04004769945074323
+        },
+        {
+          "a": "F",
+          "b": "redist_gap",
+          "angle": 0.06657316991074297
+        },
+        {
+          "a": "F_rank",
+          "b": "dn_tgt",
+          "angle": 1.5707963267948932
+        },
+        {
+          "a": "F_rank",
+          "b": "dn_rnd_mean",
+          "angle": 1.5677450089570366
+        },
+        {
+          "a": "F_rank",
+          "b": "abs_dn_tgt",
+          "angle": 1.5707963267948828
+        },
+        {
+          "a": "F_rank",
+          "b": "abs_dn_rnd_mean",
+          "angle": 1.5640658245299917
+        },
+        {
+          "a": "F_rank",
+          "b": "redist_tgt",
+          "angle": 1.570796326794893
+        },
+        {
+          "a": "F_rank",
+          "b": "gap",
+          "angle": 1.5436185906255857
+        },
+        {
+          "a": "F_rank",
+          "b": "gap_signed",
+          "angle": 1.568606299089086
+        },
+        {
+          "a": "F_rank",
+          "b": "redist_gap",
+          "angle": 1.5649633658447957
+        },
+        {
+          "a": "F_centered",
+          "b": "dn_tgt",
+          "angle": 1.4901161193847656e-08
+        },
+        {
+          "a": "F_centered",
+          "b": "dn_rnd_mean",
+          "angle": 0.013772619278611125
+        },
+        {
+          "a": "F_centered",
+          "b": "abs_dn_tgt",
+          "angle": 2.580956827951785e-08
+        },
+        {
+          "a": "F_centered",
+          "b": "abs_dn_rnd_mean",
+          "angle": 0.028054723590981392
+        },
+        {
+          "a": "F_centered",
+          "b": "redist_tgt",
+          "angle": 0.0
+        },
+        {
+          "a": "F_centered",
+          "b": "gap",
+          "angle": 0.060284079280050244
+        },
+        {
+          "a": "F_centered",
+          "b": "gap_signed",
+          "angle": 0.04004769945074045
+        },
+        {
+          "a": "F_centered",
+          "b": "redist_gap",
+          "angle": 0.06657316991074297
+        },
+        {
+          "a": "F_zscore",
+          "b": "dn_tgt",
+          "angle": 0.0
+        },
+        {
+          "a": "F_zscore",
+          "b": "dn_rnd_mean",
+          "angle": 0.013772619278595003
+        },
+        {
+          "a": "F_zscore",
+          "b": "abs_dn_tgt",
+          "angle": 2.1073424255447017e-08
+        },
+        {
+          "a": "F_zscore",
+          "b": "abs_dn_rnd_mean",
+          "angle": 0.02805472359098535
+        },
+        {
+          "a": "F_zscore",
+          "b": "redist_tgt",
+          "angle": 1.4901161193847656e-08
+        },
+        {
+          "a": "F_zscore",
+          "b": "gap",
+          "angle": 0.06028407928005209
+        },
+        {
+          "a": "F_zscore",
+          "b": "gap_signed",
+          "angle": 0.04004769945074045
+        },
+        {
+          "a": "F_zscore",
+          "b": "redist_gap",
+          "angle": 0.06657316991074465
+        },
+        {
+          "a": "dn_tgt",
+          "b": "gap",
+          "angle": 0.06028407928005762
+        },
+        {
+          "a": "dn_tgt",
+          "b": "gap_signed",
+          "angle": 0.040047699450762635
+        },
+        {
+          "a": "dn_tgt",
+          "b": "redist_gap",
+          "angle": 0.06657316991075632
+        },
+        {
+          "a": "dn_rnd_mean",
+          "b": "gap",
+          "angle": 0.07060020962178885
+        },
+        {
+          "a": "dn_rnd_mean",
+          "b": "gap_signed",
+          "angle": 0.05313842455217169
+        },
+        {
+          "a": "dn_rnd_mean",
+          "b": "redist_gap",
+          "angle": 0.07622542582640787
+        },
+        {
+          "a": "abs_dn_tgt",
+          "b": "gap",
+          "angle": 0.06028407928005946
+        },
+        {
+          "a": "abs_dn_tgt",
+          "b": "gap_signed",
+          "angle": 0.040047699450770954
+        },
+        {
+          "a": "abs_dn_tgt",
+          "b": "redist_gap",
+          "angle": 0.06657316991075299
+        },
+        {
+          "a": "abs_dn_rnd_mean",
+          "b": "gap",
+          "angle": 0.08438546122906329
+        },
+        {
+          "a": "abs_dn_rnd_mean",
+          "b": "gap_signed",
+          "angle": 0.056066599212586214
+        },
+        {
+          "a": "abs_dn_rnd_mean",
+          "b": "redist_gap",
+          "angle": 0.06300625809469212
+        },
+        {
+          "a": "redist_tgt",
+          "b": "gap",
+          "angle": 0.06028407928005762
+        },
+        {
+          "a": "redist_tgt",
+          "b": "gap_signed",
+          "angle": 0.040047699450768186
+        },
+        {
+          "a": "redist_tgt",
+          "b": "redist_gap",
+          "angle": 0.066573169910758
+        }
+      ]
+    },
+    "8": {
+      "n_cells": 16,
+      "n_within_pairs": 19,
+      "n_across_pairs": 47,
+      "median_within_angle": 1.3111907517120944,
+      "median_across_angle": 1.526011114035739,
+      "ks_statistic": 0.3023939393939394,
+      "ks_pvalue": 8.824859468813946e-06,
+      "empirical_q25": 0.8032813719381056,
+      "null_q25": 1.257480026709467,
+      "left_tail_longer": true,
+      "P2.1_pass": true,
+      "P2.2_pass": false,
+      "P2.3_pass": true,
+      "within_pairs": [
+        {
+          "a": "F",
+          "b": "F_rank",
+          "angle": 1.570796326794828
+        },
+        {
+          "a": "F",
+          "b": "F_centered",
+          "angle": 1.4901161193847656e-08
+        },
+        {
+          "a": "F",
+          "b": "F_zscore",
+          "angle": 0.0
+        },
+        {
+          "a": "F_rank",
+          "b": "F_centered",
+          "angle": 1.5707963267948277
+        },
+        {
+          "a": "F_rank",
+          "b": "F_zscore",
+          "angle": 1.570796326794828
+        },
+        {
+          "a": "F_centered",
+          "b": "F_zscore",
+          "angle": 2.1073424255447017e-08
+        },
+        {
+          "a": "dn_tgt",
+          "b": "dn_rnd_mean",
+          "angle": 1.4824890432418552
+        },
+        {
+          "a": "dn_tgt",
+          "b": "abs_dn_tgt",
+          "angle": 0.7525642709456717
+        },
+        {
+          "a": "dn_tgt",
+          "b": "abs_dn_rnd_mean",
+          "angle": 1.4741742833314353
+        },
+        {
+          "a": "dn_tgt",
+          "b": "redist_tgt",
+          "angle": 0.3625704140097027
+        },
+        {
+          "a": "dn_rnd_mean",
+          "b": "abs_dn_tgt",
+          "angle": 1.3309269357681457
+        },
+        {
+          "a": "dn_rnd_mean",
+          "b": "abs_dn_rnd_mean",
+          "angle": 0.07701226540425754
+        },
+        {
+          "a": "dn_rnd_mean",
+          "b": "redist_tgt",
+          "angle": 1.5222229592042973
+        },
+        {
+          "a": "abs_dn_tgt",
+          "b": "abs_dn_rnd_mean",
+          "angle": 1.3111907517120944
+        },
+        {
+          "a": "abs_dn_tgt",
+          "b": "redist_tgt",
+          "angle": 0.4711651704740216
+        },
+        {
+          "a": "abs_dn_rnd_mean",
+          "b": "redist_tgt",
+          "angle": 1.5127809774363241
+        },
+        {
+          "a": "gap",
+          "b": "gap_signed",
+          "angle": 1.5359682247127904
+        },
+        {
+          "a": "gap",
+          "b": "redist_gap",
+          "angle": 0.9896058239384379
+        },
+        {
+          "a": "gap_signed",
+          "b": "redist_gap",
+          "angle": 0.6174609114756813
+        }
+      ],
+      "across_pairs": [
+        {
+          "a": "F",
+          "b": "dn_tgt",
+          "angle": 1.5330193840028596
+        },
+        {
+          "a": "F",
+          "b": "dn_rnd_mean",
+          "angle": 0.5479496578269885
+        },
+        {
+          "a": "F",
+          "b": "abs_dn_tgt",
+          "angle": 1.4028581244888783
+        },
+        {
+          "a": "F",
+          "b": "abs_dn_rnd_mean",
+          "angle": 0.5758865707493099
+        },
+        {
+          "a": "F",
+          "b": "redist_tgt",
+          "angle": 1.5646328169026593
+        },
+        {
+          "a": "F",
+          "b": "gap",
+          "angle": 1.5469276847041264
+        },
+        {
+          "a": "F",
+          "b": "gap_signed",
+          "angle": 1.560384850914106
+        },
+        {
+          "a": "F",
+          "b": "redist_gap",
+          "angle": 1.5679116556717958
+        },
+        {
+          "a": "F_rank",
+          "b": "dn_tgt",
+          "angle": 1.3830770395248906
+        },
+        {
+          "a": "F_rank",
+          "b": "dn_rnd_mean",
+          "angle": 1.570792192710127
+        },
+        {
+          "a": "F_rank",
+          "b": "abs_dn_tgt",
+          "angle": 0.9802975305591104
+        },
+        {
+          "a": "F_rank",
+          "b": "abs_dn_rnd_mean",
+          "angle": 1.5563057573685815
+        },
+        {
+          "a": "F_rank",
+          "b": "redist_tgt",
+          "angle": 1.1553091047450132
+        },
+        {
+          "a": "F_rank",
+          "b": "gap",
+          "angle": 1.4297235817205185
+        },
+        {
+          "a": "F_rank",
+          "b": "gap_signed",
+          "angle": 1.3819658926010663
+        },
+        {
+          "a": "F_rank",
+          "b": "redist_gap",
+          "angle": 1.1530319499837134
+        },
+        {
+          "a": "F_centered",
+          "b": "dn_tgt",
+          "angle": 1.5330193840028596
+        },
+        {
+          "a": "F_centered",
+          "b": "dn_rnd_mean",
+          "angle": 0.5479496578269898
+        },
+        {
+          "a": "F_centered",
+          "b": "abs_dn_tgt",
+          "angle": 1.4028581244888778
+        },
+        {
+          "a": "F_centered",
+          "b": "abs_dn_rnd_mean",
+          "angle": 0.5758865707493114
+        },
+        {
+          "a": "F_centered",
+          "b": "redist_tgt",
+          "angle": 1.5646328169026593
+        },
+        {
+          "a": "F_centered",
+          "b": "gap",
+          "angle": 1.5469276847041262
+        },
+        {
+          "a": "F_centered",
+          "b": "gap_signed",
+          "angle": 1.5603848509141063
+        },
+        {
+          "a": "F_centered",
+          "b": "redist_gap",
+          "angle": 1.5679116556717956
+        },
+        {
+          "a": "F_zscore",
+          "b": "dn_tgt",
+          "angle": 1.5330193840028596
+        },
+        {
+          "a": "F_zscore",
+          "b": "dn_rnd_mean",
+          "angle": 0.5479496578269887
+        },
+        {
+          "a": "F_zscore",
+          "b": "abs_dn_tgt",
+          "angle": 1.402858124488878
+        },
+        {
+          "a": "F_zscore",
+          "b": "abs_dn_rnd_mean",
+          "angle": 0.5758865707493102
+        },
+        {
+          "a": "F_zscore",
+          "b": "redist_tgt",
+          "angle": 1.5646328169026593
+        },
+        {
+          "a": "F_zscore",
+          "b": "gap",
+          "angle": 1.5469276847041262
+        },
+        {
+          "a": "F_zscore",
+          "b": "gap_signed",
+          "angle": 1.560384850914106
+        },
+        {
+          "a": "F_zscore",
+          "b": "redist_gap",
+          "angle": 1.5679116556717958
+        },
+        {
+          "a": "dn_tgt",
+          "b": "gap",
+          "angle": 0.8174226986744995
+        },
+        {
+          "a": "dn_tgt",
+          "b": "gap_signed",
+          "angle": 0.7654862852149464
+        },
+        {
+          "a": "dn_tgt",
+          "b": "redist_gap",
+          "angle": 1.3787636691779785
+        },
+        {
+          "a": "dn_rnd_mean",
+          "b": "gap",
+          "angle": 1.526011114035739
+        },
+        {
+          "a": "dn_rnd_mean",
+          "b": "gap_signed",
+          "angle": 1.5449066180797397
+        },
+        {
+          "a": "dn_rnd_mean",
+          "b": "redist_gap",
+          "angle": 1.5639143074141142
+        },
+        {
+          "a": "abs_dn_tgt",
+          "b": "gap",
+          "angle": 0.9443214477935792
+        },
+        {
+          "a": "abs_dn_tgt",
+          "b": "gap_signed",
+          "angle": 0.7985675963593076
+        },
+        {
+          "a": "abs_dn_tgt",
+          "b": "redist_gap",
+          "angle": 1.2307666903610168
+        },
+        {
+          "a": "abs_dn_rnd_mean",
+          "b": "gap",
+          "angle": 1.528721054003216
+        },
+        {
+          "a": "abs_dn_rnd_mean",
+          "b": "gap_signed",
+          "angle": 1.5260364444359111
+        },
+        {
+          "a": "abs_dn_rnd_mean",
+          "b": "redist_gap",
+          "angle": 1.5405219544275737
+        },
+        {
+          "a": "redist_tgt",
+          "b": "gap",
+          "angle": 0.6502415495972582
+        },
+        {
+          "a": "redist_tgt",
+          "b": "gap_signed",
+          "angle": 0.9225205358051057
+        },
+        {
+          "a": "redist_tgt",
+          "b": "redist_gap",
+          "angle": 1.529270647385527
+        }
+      ]
+    },
+    "9": {
+      "n_cells": 24,
+      "n_within_pairs": 19,
+      "n_across_pairs": 47,
+      "median_within_angle": 0.38161734450405393,
+      "median_across_angle": 0.9678533924351579,
+      "ks_statistic": 0.6024666666666667,
+      "ks_pvalue": 3.959749579012252e-23,
+      "empirical_q25": 0.526479389729893,
+      "null_q25": 1.282199475215707,
+      "left_tail_longer": true,
+      "P2.1_pass": true,
+      "P2.2_pass": false,
+      "P2.3_pass": true,
+      "within_pairs": [
+        {
+          "a": "F",
+          "b": "F_rank",
+          "angle": 1.5707963267948255
+        },
+        {
+          "a": "F",
+          "b": "F_centered",
+          "angle": 0.0
+        },
+        {
+          "a": "F",
+          "b": "F_zscore",
+          "angle": 0.0
+        },
+        {
+          "a": "F_rank",
+          "b": "F_centered",
+          "angle": 1.5707963267948257
+        },
+        {
+          "a": "F_rank",
+          "b": "F_zscore",
+          "angle": 1.5707963267948257
+        },
+        {
+          "a": "F_centered",
+          "b": "F_zscore",
+          "angle": 0.0
+        },
+        {
+          "a": "dn_tgt",
+          "b": "dn_rnd_mean",
+          "angle": 0.08127975197759511
+        },
+        {
+          "a": "dn_tgt",
+          "b": "abs_dn_tgt",
+          "angle": 0.23759992223436205
+        },
+        {
+          "a": "dn_tgt",
+          "b": "abs_dn_rnd_mean",
+          "angle": 0.25840206205659494
+        },
+        {
+          "a": "dn_tgt",
+          "b": "redist_tgt",
+          "angle": 0.38161734450405393
+        },
+        {
+          "a": "dn_rnd_mean",
+          "b": "abs_dn_tgt",
+          "angle": 0.19027149332568383
+        },
+        {
+          "a": "dn_rnd_mean",
+          "b": "abs_dn_rnd_mean",
+          "angle": 0.30938202043986407
+        },
+        {
+          "a": "dn_rnd_mean",
+          "b": "redist_tgt",
+          "angle": 0.4286954221858188
+        },
+        {
+          "a": "abs_dn_tgt",
+          "b": "abs_dn_rnd_mean",
+          "angle": 0.2585456568443348
+        },
+        {
+          "a": "abs_dn_tgt",
+          "b": "redist_tgt",
+          "angle": 0.6085843642392597
+        },
+        {
+          "a": "abs_dn_rnd_mean",
+          "b": "redist_tgt",
+          "angle": 0.46662313008756584
+        },
+        {
+          "a": "gap",
+          "b": "gap_signed",
+          "angle": 0.8178214307018714
+        },
+        {
+          "a": "gap",
+          "b": "redist_gap",
+          "angle": 1.5313022216876648
+        },
+        {
+          "a": "gap_signed",
+          "b": "redist_gap",
+          "angle": 0.8350145609836523
+        }
+      ],
+      "across_pairs": [
+        {
+          "a": "F",
+          "b": "dn_tgt",
+          "angle": 0.5640028898325903
+        },
+        {
+          "a": "F",
+          "b": "dn_rnd_mean",
+          "angle": 0.5668493571689343
+        },
+        {
+          "a": "F",
+          "b": "abs_dn_tgt",
+          "angle": 0.5453393892808336
+        },
+        {
+          "a": "F",
+          "b": "abs_dn_rnd_mean",
+          "angle": 0.37625575977729586
+        },
+        {
+          "a": "F",
+          "b": "redist_tgt",
+          "angle": 0.628680098018628
+        },
+        {
+          "a": "F",
+          "b": "gap",
+          "angle": 0.9167417846264475
+        },
+        {
+          "a": "F",
+          "b": "gap_signed",
+          "angle": 1.1052639006730653
+        },
+        {
+          "a": "F",
+          "b": "redist_gap",
+          "angle": 1.4034805217002142
+        },
+        {
+          "a": "F_rank",
+          "b": "dn_tgt",
+          "angle": 1.5707963267948961
+        },
+        {
+          "a": "F_rank",
+          "b": "dn_rnd_mean",
+          "angle": 1.5701097450489572
+        },
+        {
+          "a": "F_rank",
+          "b": "abs_dn_tgt",
+          "angle": 1.5707963267948803
+        },
+        {
+          "a": "F_rank",
+          "b": "abs_dn_rnd_mean",
+          "angle": 1.570320269986688
+        },
+        {
+          "a": "F_rank",
+          "b": "redist_tgt",
+          "angle": 1.5707963267948906
+        },
+        {
+          "a": "F_rank",
+          "b": "gap",
+          "angle": 1.5527036896591893
+        },
+        {
+          "a": "F_rank",
+          "b": "gap_signed",
+          "angle": 1.5595455395296642
+        },
+        {
+          "a": "F_rank",
+          "b": "redist_gap",
+          "angle": 1.5543078511566883
+        },
+        {
+          "a": "F_centered",
+          "b": "dn_tgt",
+          "angle": 0.5640028898325903
+        },
+        {
+          "a": "F_centered",
+          "b": "dn_rnd_mean",
+          "angle": 0.5668493571689347
+        },
+        {
+          "a": "F_centered",
+          "b": "abs_dn_tgt",
+          "angle": 0.5453393892808336
+        },
+        {
+          "a": "F_centered",
+          "b": "abs_dn_rnd_mean",
+          "angle": 0.37625575977729525
+        },
+        {
+          "a": "F_centered",
+          "b": "redist_tgt",
+          "angle": 0.6286800980186278
+        },
+        {
+          "a": "F_centered",
+          "b": "gap",
+          "angle": 0.9167417846264476
+        },
+        {
+          "a": "F_centered",
+          "b": "gap_signed",
+          "angle": 1.1052639006730653
+        },
+        {
+          "a": "F_centered",
+          "b": "redist_gap",
+          "angle": 1.4034805217002142
+        },
+        {
+          "a": "F_zscore",
+          "b": "dn_tgt",
+          "angle": 0.5640028898325901
+        },
+        {
+          "a": "F_zscore",
+          "b": "dn_rnd_mean",
+          "angle": 0.5668493571689343
+        },
+        {
+          "a": "F_zscore",
+          "b": "abs_dn_tgt",
+          "angle": 0.5453393892808334
+        },
+        {
+          "a": "F_zscore",
+          "b": "abs_dn_rnd_mean",
+          "angle": 0.37625575977729525
+        },
+        {
+          "a": "F_zscore",
+          "b": "redist_tgt",
+          "angle": 0.6286800980186281
+        },
+        {
+          "a": "F_zscore",
+          "b": "gap",
+          "angle": 0.9167417846264475
+        },
+        {
+          "a": "F_zscore",
+          "b": "gap_signed",
+          "angle": 1.1052639006730656
+        },
+        {
+          "a": "F_zscore",
+          "b": "redist_gap",
+          "angle": 1.4034805217002142
+        },
+        {
+          "a": "dn_tgt",
+          "b": "gap",
+          "angle": 0.5065908683351446
+        },
+        {
+          "a": "dn_tgt",
+          "b": "gap_signed",
+          "angle": 1.0887413747960288
+        },
+        {
+          "a": "dn_tgt",
+          "b": "redist_gap",
+          "angle": 1.353723835992375
+        },
+        {
+          "a": "dn_rnd_mean",
+          "b": "gap",
+          "angle": 0.5336730895432323
+        },
+        {
+          "a": "dn_rnd_mean",
+          "b": "gap_signed",
+          "angle": 1.1433096806978162
+        },
+        {
+          "a": "dn_rnd_mean",
+          "b": "redist_gap",
+          "angle": 1.2934637347900728
+        },
+        {
+          "a": "abs_dn_tgt",
+          "b": "gap",
+          "angle": 0.5240814897921133
+        },
+        {
+          "a": "abs_dn_tgt",
+          "b": "gap_signed",
+          "angle": 1.1921838655104056
+        },
+        {
+          "a": "abs_dn_tgt",
+          "b": "redist_gap",
+          "angle": 1.1821322634322402
+        },
+        {
+          "a": "abs_dn_rnd_mean",
+          "b": "gap",
+          "angle": 0.5992377000200827
+        },
+        {
+          "a": "abs_dn_rnd_mean",
+          "b": "gap_signed",
+          "angle": 1.0684646859498852
+        },
+        {
+          "a": "abs_dn_rnd_mean",
+          "b": "redist_gap",
+          "angle": 1.363613155920073
+        },
+        {
+          "a": "redist_tgt",
+          "b": "gap",
+          "angle": 0.755025452511194
+        },
+        {
+          "a": "redist_tgt",
+          "b": "gap_signed",
+          "angle": 0.9678533924351579
+        },
+        {
+          "a": "redist_tgt",
+          "b": "redist_gap",
+          "angle": 1.4872145894280635
+        }
+      ]
+    }
+  },
+  "P2.1_overall_pass": true,
+  "P2.2_overall_pass": false,
+  "P2.3_overall_pass": true,
+  "F2.1_falsified": false,
+  "F2.2_falsified": false,
+  "F2.3_falsified": false
+}

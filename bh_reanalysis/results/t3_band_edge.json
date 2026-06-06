@@ -1,0 +1,664 @@
+{
+  "primary": {
+    "observer": "gap",
+    "per_Ltau": {
+      "L8_tau2.0": {
+        "L": 8,
+        "tau": 2.0,
+        "n_J_values": 8,
+        "J_over_U": [
+          0.16,
+          0.18,
+          0.2,
+          0.22,
+          0.24,
+          0.26,
+          0.28,
+          0.3
+        ],
+        "consecutive_angles": [
+          1.0173007571601367,
+          0.9449621627820681,
+          0.8760969722139978,
+          0.2783006967738832,
+          1.0367341103264598,
+          1.1219435600817347,
+          1.2755660808744742
+        ],
+        "theta_threshold": 1.2755660808744742,
+        "theta_offthreshold": 0.9105295674980329,
+        "ratio": 1.400905721688417,
+        "argmax_consecutive_J_pair": [
+          0.28,
+          0.3
+        ],
+        "argmax_consecutive_idx": 6,
+        "argmax_in_threshold_band": true,
+        "argmax_in_prediction_band_0p24_0p32": true,
+        "argmax_in_falsification_band_0p20_0p36": true
+      },
+      "L8_tau3.0": {
+        "L": 8,
+        "tau": 3.0,
+        "n_J_values": 8,
+        "J_over_U": [
+          0.16,
+          0.18,
+          0.2,
+          0.22,
+          0.24,
+          0.26,
+          0.28,
+          0.3
+        ],
+        "consecutive_angles": [
+          1.113021664369787,
+          1.1106648021732575,
+          1.18586946182349,
+          0.16982350525091403,
+          1.357166889608709,
+          1.4795118554235762,
+          1.2836240705688233
+        ],
+        "theta_threshold": 1.4795118554235762,
+        "theta_offthreshold": 1.1118432332715222,
+        "ratio": 1.3306838690470908,
+        "argmax_consecutive_J_pair": [
+          0.26,
+          0.28
+        ],
+        "argmax_consecutive_idx": 5,
+        "argmax_in_threshold_band": true,
+        "argmax_in_prediction_band_0p24_0p32": true,
+        "argmax_in_falsification_band_0p20_0p36": true
+      },
+      "L9_tau2.0": {
+        "L": 9,
+        "tau": 2.0,
+        "n_J_values": 10,
+        "J_over_U": [
+          0.12,
+          0.16,
+          0.18,
+          0.2,
+          0.22,
+          0.24,
+          0.26,
+          0.28,
+          0.3,
+          0.4
+        ],
+        "consecutive_angles": [
+          0.4697082889391283,
+          0.7481142050036714,
+          0.5283367856815763,
+          0.29335297701346097,
+          0.22140983519946758,
+          0.21611987487167153,
+          0.16048824429557582,
+          0.39101601903744315,
+          1.1334330572500904
+        ],
+        "theta_threshold": 0.39101601903744315,
+        "theta_offthreshold": 0.4990225373103523,
+        "ratio": 0.7835638469255394,
+        "argmax_consecutive_J_pair": [
+          0.3,
+          0.4
+        ],
+        "argmax_consecutive_idx": 8,
+        "argmax_in_threshold_band": true,
+        "argmax_in_prediction_band_0p24_0p32": false,
+        "argmax_in_falsification_band_0p20_0p36": false
+      },
+      "L9_tau3.0": {
+        "L": 9,
+        "tau": 3.0,
+        "n_J_values": 10,
+        "J_over_U": [
+          0.12,
+          0.16,
+          0.18,
+          0.2,
+          0.22,
+          0.24,
+          0.26,
+          0.28,
+          0.3,
+          0.4
+        ],
+        "consecutive_angles": [
+          0.3978273440048286,
+          0.6427734107641291,
+          0.3997409489099721,
+          0.21638749882141187,
+          0.11331777206274245,
+          0.14205958887965425,
+          0.3071113968169326,
+          0.2904379057510169,
+          0.9052121240271824
+        ],
+        "theta_threshold": 0.3071113968169326,
+        "theta_offthreshold": 0.39878414645740035,
+        "ratio": 0.7701193729619326,
+        "argmax_consecutive_J_pair": [
+          0.3,
+          0.4
+        ],
+        "argmax_consecutive_idx": 8,
+        "argmax_in_threshold_band": true,
+        "argmax_in_prediction_band_0p24_0p32": false,
+        "argmax_in_falsification_band_0p20_0p36": false
+      }
+    },
+    "P3.1_pass": false,
+    "P3.1_pairs_pass": [
+      true,
+      false
+    ],
+    "P3.1_ratios": [
+      1.400905721688417,
+      0.7835638469255394
+    ],
+    "P3.2_pass": true,
+    "F3.1_falsified": false,
+    "F3.2_falsified": false
+  },
+  "sensitivity": {
+    "primary_gap": {
+      "observer": "gap",
+      "per_Ltau": {
+        "L8_tau2.0": {
+          "L": 8,
+          "tau": 2.0,
+          "n_J_values": 8,
+          "J_over_U": [
+            0.16,
+            0.18,
+            0.2,
+            0.22,
+            0.24,
+            0.26,
+            0.28,
+            0.3
+          ],
+          "consecutive_angles": [
+            1.0173007571601367,
+            0.9449621627820681,
+            0.8760969722139978,
+            0.2783006967738832,
+            1.0367341103264598,
+            1.1219435600817347,
+            1.2755660808744742
+          ],
+          "theta_threshold": 1.2755660808744742,
+          "theta_offthreshold": 0.9105295674980329,
+          "ratio": 1.400905721688417,
+          "argmax_consecutive_J_pair": [
+            0.28,
+            0.3
+          ],
+          "argmax_consecutive_idx": 6,
+          "argmax_in_threshold_band": true,
+          "argmax_in_prediction_band_0p24_0p32": true,
+          "argmax_in_falsification_band_0p20_0p36": true
+        },
+        "L8_tau3.0": {
+          "L": 8,
+          "tau": 3.0,
+          "n_J_values": 8,
+          "J_over_U": [
+            0.16,
+            0.18,
+            0.2,
+            0.22,
+            0.24,
+            0.26,
+            0.28,
+            0.3
+          ],
+          "consecutive_angles": [
+            1.113021664369787,
+            1.1106648021732575,
+            1.18586946182349,
+            0.16982350525091403,
+            1.357166889608709,
+            1.4795118554235762,
+            1.2836240705688233
+          ],
+          "theta_threshold": 1.4795118554235762,
+          "theta_offthreshold": 1.1118432332715222,
+          "ratio": 1.3306838690470908,
+          "argmax_consecutive_J_pair": [
+            0.26,
+            0.28
+          ],
+          "argmax_consecutive_idx": 5,
+          "argmax_in_threshold_band": true,
+          "argmax_in_prediction_band_0p24_0p32": true,
+          "argmax_in_falsification_band_0p20_0p36": true
+        },
+        "L9_tau2.0": {
+          "L": 9,
+          "tau": 2.0,
+          "n_J_values": 10,
+          "J_over_U": [
+            0.12,
+            0.16,
+            0.18,
+            0.2,
+            0.22,
+            0.24,
+            0.26,
+            0.28,
+            0.3,
+            0.4
+          ],
+          "consecutive_angles": [
+            0.4697082889391283,
+            0.7481142050036714,
+            0.5283367856815763,
+            0.29335297701346097,
+            0.22140983519946758,
+            0.21611987487167153,
+            0.16048824429557582,
+            0.39101601903744315,
+            1.1334330572500904
+          ],
+          "theta_threshold": 0.39101601903744315,
+          "theta_offthreshold": 0.4990225373103523,
+          "ratio": 0.7835638469255394,
+          "argmax_consecutive_J_pair": [
+            0.3,
+            0.4
+          ],
+          "argmax_consecutive_idx": 8,
+          "argmax_in_threshold_band": true,
+          "argmax_in_prediction_band_0p24_0p32": false,
+          "argmax_in_falsification_band_0p20_0p36": false
+        },
+        "L9_tau3.0": {
+          "L": 9,
+          "tau": 3.0,
+          "n_J_values": 10,
+          "J_over_U": [
+            0.12,
+            0.16,
+            0.18,
+            0.2,
+            0.22,
+            0.24,
+            0.26,
+            0.28,
+            0.3,
+            0.4
+          ],
+          "consecutive_angles": [
+            0.3978273440048286,
+            0.6427734107641291,
+            0.3997409489099721,
+            0.21638749882141187,
+            0.11331777206274245,
+            0.14205958887965425,
+            0.3071113968169326,
+            0.2904379057510169,
+            0.9052121240271824
+          ],
+          "theta_threshold": 0.3071113968169326,
+          "theta_offthreshold": 0.39878414645740035,
+          "ratio": 0.7701193729619326,
+          "argmax_consecutive_J_pair": [
+            0.3,
+            0.4
+          ],
+          "argmax_consecutive_idx": 8,
+          "argmax_in_threshold_band": true,
+          "argmax_in_prediction_band_0p24_0p32": false,
+          "argmax_in_falsification_band_0p20_0p36": false
+        }
+      },
+      "P3.1_pass": false,
+      "P3.1_pairs_pass": [
+        true,
+        false
+      ],
+      "P3.1_ratios": [
+        1.400905721688417,
+        0.7835638469255394
+      ],
+      "P3.2_pass": true,
+      "F3.1_falsified": false,
+      "F3.2_falsified": false
+    },
+    "redist_gap": {
+      "observer": "redist_gap",
+      "per_Ltau": {
+        "L8_tau2.0": {
+          "L": 8,
+          "tau": 2.0,
+          "n_J_values": 8,
+          "J_over_U": [
+            0.16,
+            0.18,
+            0.2,
+            0.22,
+            0.24,
+            0.26,
+            0.28,
+            0.3
+          ],
+          "consecutive_angles": [
+            0.14505619848814746,
+            0.39698686985219017,
+            0.4302261660605979,
+            0.28746102802703993,
+            0.8473720126250827,
+            0.9461644956523113,
+            1.111101936703301
+          ],
+          "theta_threshold": 1.111101936703301,
+          "theta_offthreshold": 0.34222394893961505,
+          "ratio": 3.246710056809477,
+          "argmax_consecutive_J_pair": [
+            0.28,
+            0.3
+          ],
+          "argmax_consecutive_idx": 6,
+          "argmax_in_threshold_band": true,
+          "argmax_in_prediction_band_0p24_0p32": true,
+          "argmax_in_falsification_band_0p20_0p36": true
+        },
+        "L8_tau3.0": {
+          "L": 8,
+          "tau": 3.0,
+          "n_J_values": 8,
+          "J_over_U": [
+            0.16,
+            0.18,
+            0.2,
+            0.22,
+            0.24,
+            0.26,
+            0.28,
+            0.3
+          ],
+          "consecutive_angles": [
+            0.5829008568390515,
+            0.8046985637018531,
+            1.0156576010789111,
+            0.12565336419530057,
+            1.255858453893134,
+            1.3238417322314768,
+            1.4930148479532448
+          ],
+          "theta_threshold": 1.4930148479532448,
+          "theta_offthreshold": 0.6937997102704523,
+          "ratio": 2.1519392785149014,
+          "argmax_consecutive_J_pair": [
+            0.28,
+            0.3
+          ],
+          "argmax_consecutive_idx": 6,
+          "argmax_in_threshold_band": true,
+          "argmax_in_prediction_band_0p24_0p32": true,
+          "argmax_in_falsification_band_0p20_0p36": true
+        },
+        "L9_tau2.0": {
+          "L": 9,
+          "tau": 2.0,
+          "n_J_values": 10,
+          "J_over_U": [
+            0.12,
+            0.16,
+            0.18,
+            0.2,
+            0.22,
+            0.24,
+            0.26,
+            0.28,
+            0.3,
+            0.4
+          ],
+          "consecutive_angles": [
+            0.6645607834764903,
+            0.6290223686892884,
+            0.289914606562103,
+            0.17213302448566534,
+            0.1996232753627265,
+            0.23279202991715223,
+            0.07808782094168389,
+            0.2031305588036583,
+            0.36843780879587945
+          ],
+          "theta_threshold": 0.23279202991715223,
+          "theta_offthreshold": 0.32917620767899125,
+          "ratio": 0.7071957950988009,
+          "argmax_consecutive_J_pair": [
+            0.12,
+            0.16
+          ],
+          "argmax_consecutive_idx": 0,
+          "argmax_in_threshold_band": false,
+          "argmax_in_prediction_band_0p24_0p32": false,
+          "argmax_in_falsification_band_0p20_0p36": false
+        },
+        "L9_tau3.0": {
+          "L": 9,
+          "tau": 3.0,
+          "n_J_values": 10,
+          "J_over_U": [
+            0.12,
+            0.16,
+            0.18,
+            0.2,
+            0.22,
+            0.24,
+            0.26,
+            0.28,
+            0.3,
+            0.4
+          ],
+          "consecutive_angles": [
+            0.6166276538832285,
+            0.35566842971723284,
+            0.24190654389030694,
+            0.12479538197719821,
+            0.07131100501714631,
+            0.08676521877864059,
+            0.12065006088415668,
+            0.11111251314145354,
+            0.41292619757974813
+          ],
+          "theta_threshold": 0.12065006088415668,
+          "theta_offthreshold": 0.2987874868037699,
+          "ratio": 0.40379890796228085,
+          "argmax_consecutive_J_pair": [
+            0.12,
+            0.16
+          ],
+          "argmax_consecutive_idx": 0,
+          "argmax_in_threshold_band": false,
+          "argmax_in_prediction_band_0p24_0p32": false,
+          "argmax_in_falsification_band_0p20_0p36": false
+        }
+      },
+      "P3.1_pass": false,
+      "P3.1_pairs_pass": [
+        true,
+        false
+      ],
+      "P3.1_ratios": [
+        3.246710056809477,
+        0.7071957950988009
+      ],
+      "P3.2_pass": true,
+      "F3.1_falsified": false,
+      "F3.2_falsified": false
+    },
+    "dn_tgt": {
+      "observer": "dn_tgt",
+      "per_Ltau": {
+        "L8_tau2.0": {
+          "L": 8,
+          "tau": 2.0,
+          "n_J_values": 8,
+          "J_over_U": [
+            0.16,
+            0.18,
+            0.2,
+            0.22,
+            0.24,
+            0.26,
+            0.28,
+            0.3
+          ],
+          "consecutive_angles": [
+            0.37485141303107505,
+            0.40232217139214693,
+            0.42642835592936656,
+            0.09796898881303084,
+            0.45914788217291763,
+            0.4668719940019625,
+            0.46879960360467143
+          ],
+          "theta_threshold": 0.46879960360467143,
+          "theta_offthreshold": 0.38858679221161097,
+          "ratio": 1.2064218676515885,
+          "argmax_consecutive_J_pair": [
+            0.28,
+            0.3
+          ],
+          "argmax_consecutive_idx": 6,
+          "argmax_in_threshold_band": true,
+          "argmax_in_prediction_band_0p24_0p32": true,
+          "argmax_in_falsification_band_0p20_0p36": true
+        },
+        "L8_tau3.0": {
+          "L": 8,
+          "tau": 3.0,
+          "n_J_values": 8,
+          "J_over_U": [
+            0.16,
+            0.18,
+            0.2,
+            0.22,
+            0.24,
+            0.26,
+            0.28,
+            0.3
+          ],
+          "consecutive_angles": [
+            0.43224877955487323,
+            0.45118021338202857,
+            0.463472094630447,
+            0.095343455415095,
+            0.4650271008540144,
+            0.45527214699512675,
+            0.44013500930229527
+          ],
+          "theta_threshold": 0.4650271008540144,
+          "theta_offthreshold": 0.4417144964684509,
+          "ratio": 1.052777539727471,
+          "argmax_consecutive_J_pair": [
+            0.24,
+            0.26
+          ],
+          "argmax_consecutive_idx": 4,
+          "argmax_in_threshold_band": true,
+          "argmax_in_prediction_band_0p24_0p32": true,
+          "argmax_in_falsification_band_0p20_0p36": true
+        },
+        "L9_tau2.0": {
+          "L": 9,
+          "tau": 2.0,
+          "n_J_values": 10,
+          "J_over_U": [
+            0.12,
+            0.16,
+            0.18,
+            0.2,
+            0.22,
+            0.24,
+            0.26,
+            0.28,
+            0.3,
+            0.4
+          ],
+          "consecutive_angles": [
+            0.2603489812120024,
+            0.14699349680548127,
+            0.15234953980135774,
+            0.15070844848133258,
+            0.14252769590158426,
+            0.13008455383466883,
+            0.11592435468383742,
+            0.10173211809255928,
+            0.31734434257189825
+          ],
+          "theta_threshold": 0.13008455383466883,
+          "theta_offthreshold": 0.15152899414134516,
+          "ratio": 0.8584796234661657,
+          "argmax_consecutive_J_pair": [
+            0.3,
+            0.4
+          ],
+          "argmax_consecutive_idx": 8,
+          "argmax_in_threshold_band": true,
+          "argmax_in_prediction_band_0p24_0p32": false,
+          "argmax_in_falsification_band_0p20_0p36": false
+        },
+        "L9_tau3.0": {
+          "L": 9,
+          "tau": 3.0,
+          "n_J_values": 10,
+          "J_over_U": [
+            0.12,
+            0.16,
+            0.18,
+            0.2,
+            0.22,
+            0.24,
+            0.26,
+            0.28,
+            0.3,
+            0.4
+          ],
+          "consecutive_angles": [
+            0.29621809490837464,
+            0.16427039849082622,
+            0.16359312941964316,
+            0.15321958440808373,
+            0.13605687929717378,
+            0.11619909056224012,
+            0.09701629282357421,
+            0.08043503549515355,
+            0.2237357981538025
+          ],
+          "theta_threshold": 0.11619909056224012,
+          "theta_offthreshold": 0.16393176395523468,
+          "ratio": 0.7088259636733424,
+          "argmax_consecutive_J_pair": [
+            0.12,
+            0.16
+          ],
+          "argmax_consecutive_idx": 0,
+          "argmax_in_threshold_band": false,
+          "argmax_in_prediction_band_0p24_0p32": false,
+          "argmax_in_falsification_band_0p20_0p36": false
+        }
+      },
+      "P3.1_pass": false,
+      "P3.1_pairs_pass": [
+        true,
+        false
+      ],
+      "P3.1_ratios": [
+        1.2064218676515885,
+        0.8584796234661657
+      ],
+      "P3.2_pass": true,
+      "F3.1_falsified": false,
+      "F3.2_falsified": false
+    }
+  }
+}
