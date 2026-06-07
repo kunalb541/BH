@@ -139,12 +139,28 @@ Final intervention classification:
 | detuning  | N-conserving, coherent   | yes (imposes current) |
 | loss      | N-changing, dissipative  | **no — occupation-driven** |
 
-## 10. Next science (none run)
-- **Confirm the loss boundary:** symmetry-broken loss (tilt/disorder, where F_i ≠ ⟨n_i⟩ ≠ geo)
-  to verify F_i adds nothing beyond occupation — the decisive disentangling (clean chain only
-  separates them at J/U=0.12). *Gated — not yet approved.*
+## 10. Step 3E — loss boundary CONFIRMED under symmetry breaking (2026-06-06)
+Mini tilt+disorder loss test (36 conditions; F_i≠maxn in 19; γ_loss=0.05, τ=3). **Where the
+selectors genuinely separate:** Spearman(ΔN_total, Σ⟨n_i⟩)=**+0.998** vs ΣF_i=+0.73 vs current
++0.62 vs geo +0.18; handle pct maxn=99.6 vs F_i=84.9 (maxn≥fi in 95%). Occupation is a
+near-perfect loss predictor and decisively beats variance; geometry is irrelevant.
+**Boundary closed:** the physical line is **transport-modulation vs particle-removal** —
+F_i is N-conserving-channel-scoped; ⟨n_i⟩ is the loss selector.
+
+### BH mechanism classification (complete)
+| channel | type | operative selector |
+|---|---|---|
+| dephasing | N-conserving, incoherent | **F_i** (reads pre-existing current) |
+| detuning  | N-conserving, coherent   | **F_i** (imposes current) |
+| loss      | N-changing, dissipative  | **⟨n_i⟩** (direct particle removal) |
+
+ODD reading: description privilege is **intervention-relative** — F_i is real for the
+N-conserving transport handles, ⟨n_i⟩ for the particle-removal handle; neither is universal.
+
+## 11. Next science (none run)
 - **B — Liouvillian modes:** which relaxation mode carries the current (deeper, optional).
 - **C — larger L (trajectories / MPO):** later.
+- Paper rewrite still NOT started (mechanism classification now complete & clean).
 
 ## Artifacts (this branch)
 - `mechanism_pilot.py` — clean-chain response-kernel pilot, L parametrized
@@ -158,6 +174,7 @@ Final intervention classification:
   resumable finisher (per-realization checkpoint; ~30-min env process cap).
 - `stage0_loss.py` — Step 3D multi-N machinery validation (gates A–E, all pass).
 - `loss_pilot.py` — Step 3D clean L=6 local-loss science pilot.
+- `loss_symbreak.py` — Step 3E mini tilt+disorder loss boundary confirmation.
 - `outputs/mechanism_pilot/*.csv` — pilot_results_L{6,7,8}.csv, symbreak_{tilt,disorder}.csv,
   current_mech_L{6,7,8}.csv, current_symbreak_{tilt,disorder}.csv, detune_probe_L6.csv,
   symbreak_detune_{tilt,disorder}.csv, loss_pilot_L6.csv.
