@@ -157,10 +157,27 @@ F_i is N-conserving-channel-scoped; ⟨n_i⟩ is the loss selector.
 ODD reading: description privilege is **intervention-relative** — F_i is real for the
 N-conserving transport handles, ⟨n_i⟩ for the particle-removal handle; neither is universal.
 
-## 11. Next science (none run)
+## 11. Step 4 — bond / hopping-modulation: site-level description KEPT (2026-06-06)
+Tested whether the handle is really bond-level (current is a bond object). Intervention
+J_b→J_b(1+δ) on selected bonds (per-bond-J Hamiltonian; Stage-0 validated: uniform==scalar to
+0, δ=0≡baseline, induced response linear ratios 2.00/2.01, Hermitian). Primary target =
+per-endpoint **induced** drain (raw total is baseline-confounded). k_b=2 bonds, exhaustive C(5,2)=10.
+- **Induced (clean) target: NO observable predicts it** (best |ρ|=0.19; coherence +0.00,
+  |current| +0.07, endpoint-F −0.10, occupation −0.19). The induced effect is real & linear
+  but not organized by any tested bond observable.
+- **Total (confounded) target:** endpoint-F (+0.87) and occupation (+0.86) dominate; bond
+  coherence weaker (+0.60); bond current ANTI (−0.83). No bond-intrinsic observable beats the
+  site-derived endpoint-F.
+
+**VERDICT: site-level kept.** Bond/hopping modulation does NOT reveal a bond-level handle; F_i
+(site) remains the operative description. The earlier F_i↔bond-coherence correlation (ρ=1.0)
+does not make the bond a better handle. (Note: corrected a noise-threshold false-positive in
+the script's auto-verdict; the honest verdict follows from the actual Spearmans.)
+
+## 12. Next science (none run)
 - **B — Liouvillian modes:** which relaxation mode carries the current (deeper, optional).
 - **C — larger L (trajectories / MPO):** later.
-- Paper rewrite still NOT started (mechanism classification now complete & clean).
+- Paper rewrite still NOT started.
 
 ## Artifacts (this branch)
 - `mechanism_pilot.py` — clean-chain response-kernel pilot, L parametrized
@@ -175,6 +192,7 @@ N-conserving transport handles, ⟨n_i⟩ for the particle-removal handle; neith
 - `stage0_loss.py` — Step 3D multi-N machinery validation (gates A–E, all pass).
 - `loss_pilot.py` — Step 3D clean L=6 local-loss science pilot.
 - `loss_symbreak.py` — Step 3E mini tilt+disorder loss boundary confirmation.
+- `bond_pilot.py` — Step 4 per-bond-J hopping-modulation pilot (Stage 0 + L=6); `BOND_HOPPING_PREREG.md`.
 - `outputs/mechanism_pilot/*.csv` — pilot_results_L{6,7,8}.csv, symbreak_{tilt,disorder}.csv,
   current_mech_L{6,7,8}.csv, current_symbreak_{tilt,disorder}.csv, detune_probe_L6.csv,
   symbreak_detune_{tilt,disorder}.csv, loss_pilot_L6.csv.
