@@ -93,13 +93,34 @@ Upgraded statement: directed self-drain is a **general local-transport-control**
 — dephasing throttles the current, detuning biases it — and in both the burn-in outward-
 current structure predicts which sites respond.
 
-## 8. Next science
-- **IMMEDIATE (in progress):** symmetry-broken detuning (tilt/disorder) — does F_i beat
-  geometry under coherent control as it does for dephasing? (resolves the clean-chain
-  F_i=geo degeneracy for detuning.)
-- **THEN:** amplitude damping / local loss (requires multi-N Hilbert extension; dissipative
-  gold-standard) — NOT next.
-- **OPTIONAL:** Liouvillian-mode deepening (which slow mode carries the current).
+## 8. Step 3C — symmetry-broken detuning: F_i beats geometry under coherent control (2026-06-06)
+Detuning intervention under tilt + disorder (μ_extra=+0.5; −0.5 sign check). Completes the
+intervention × symmetry-breaking matrix:
+
+| Intervention | Clean | Tilt | Disorder |
+|---|---|---|---|
+| Dephasing | pass | pass | pass |
+| Detuning  | pass | pass | pass |
+
+- Tilt (72 rows, overlap 0.29): pocket pct_fi=68.5 vs geo=44.6 (F_i≥geo 89%); at overlap<0.5, 60.8 vs 43.1 (83%).
+- Disorder (360 rows, overlap 0.52): pocket pct_fi=70.9 vs geo=58.8 (79%); at overlap<0.5, 49.8 vs geo 34.6 (71%); D_S fi>geo.
+- Sign reversal persists under breaking (+μ drains, −μ fills).
+- F_i tracks single-site detuning drain ρ=0.92–0.95; not dethroned by the detune-optimal selector.
+- **Predictor nuance:** C_S_burn predicts the response but more weakly for detuning
+  (tilt 0.46, disorder 0.55) than dephasing (0.70–0.91) — detuning *imposes* its own current
+  rather than *reading* the pre-existing one.
+
+**CONCLUSION:** F_i is a **general local-transport-control selector** — beyond geometry, for
+both dissipative dephasing and coherent detuning. The current/continuity law holds for both;
+only the *predictor* differs (dephasing reads the pre-existing burn-in current; detuning
+manufactures it).
+
+## 9. Next science (fork — none run yet)
+- **A — amplitude damping / local loss** (N-changing; requires a multi-N Hilbert-space
+  extension): does the mechanism survive a dissipative intervention that changes particle
+  number? Strongest remaining physics test.
+- **B — Liouvillian modes:** which relaxation mode carries the self-drain/current channel.
+- **C — larger L (trajectories / MPO):** later, not now.
 
 ## Artifacts (this branch)
 - `mechanism_pilot.py` — clean-chain response-kernel pilot, L parametrized
@@ -109,5 +130,8 @@ current structure predicts which sites respond.
 - `current_mechanism.py` — Step 3A continuity/current diagnostic (clean L).
 - `current_symbreak.py` — Step 3A current diagnostic under tilt + disorder.
 - `detune_probe.py` — Step 3B coherent local-detuning probe (clean L=6).
+- `symbreak_detune.py` — Step 3C detuning under tilt + disorder; `finish_detune_disorder.py`
+  resumable finisher (per-realization checkpoint; ~30-min env process cap).
 - `outputs/mechanism_pilot/*.csv` — pilot_results_L{6,7,8}.csv, symbreak_{tilt,disorder}.csv,
-  current_mech_L{6,7,8}.csv, current_symbreak_{tilt,disorder}.csv, detune_probe_L6.csv.
+  current_mech_L{6,7,8}.csv, current_symbreak_{tilt,disorder}.csv, detune_probe_L6.csv,
+  symbreak_detune_{tilt,disorder}.csv.
