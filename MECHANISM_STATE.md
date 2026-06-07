@@ -115,12 +115,36 @@ both dissipative dephasing and coherent detuning. The current/continuity law hol
 only the *predictor* differs (dephasing reads the pre-existing burn-in current; detuning
 manufactures it).
 
-## 9. Next science (fork — none run yet)
-- **A — amplitude damping / local loss** (N-changing; requires a multi-N Hilbert-space
-  extension): does the mechanism survive a dissipative intervention that changes particle
-  number? Strongest remaining physics test.
-- **B — Liouvillian modes:** which relaxation mode carries the self-drain/current channel.
-- **C — larger L (trajectories / MPO):** later, not now.
+## 9. Step 3D — local loss (N-changing channel): F_i is NOT the operative selector (2026-06-06)
+Stage 0 validated the multi-N machinery (N=0..3, D=84, exact; γ_loss=0 ≡ fixed-N to 2e-16).
+Clean L=6 loss pilot, primary target ΔN_total (total system particle loss), with the
+baseline-occupation control `maxn`:
+- All selectors are high (they're correlated in the clean chain), BUT **occupation is the best
+  predictor of loss:** Spearman(ΔN_total, Σ⟨n_i⟩)=+0.95 > ΣF_i=+0.87 = Σcurrent=+0.87 > geo=+0.86.
+- Decisive discriminator at J/U=0.12 (where maxn≠F_i): **maxn=100th pct vs F_i=67th** — occupation
+  strictly beats variance for loss.
+- Loss IS nontrivial (center>edge; current-replenishment direction holds weakly) and ~linear in
+  γ_loss, but it is **occupation-dominated**.
+
+**CONCLUSION (boundary found):** the F_i transport-control selector is **scoped to N-conserving
+channels** (dephasing, detuning). For the N-changing loss channel the operative selector is
+**baseline occupation ⟨n_i⟩**, not F_i. F_i's residual loss-predictive power is via its
+clean-chain correlation with ⟨n_i⟩.
+
+Final intervention classification:
+
+| channel | type | F_i operative? |
+|---|---|---|
+| dephasing | N-conserving, incoherent | yes (reads pre-existing current) |
+| detuning  | N-conserving, coherent   | yes (imposes current) |
+| loss      | N-changing, dissipative  | **no — occupation-driven** |
+
+## 10. Next science (none run)
+- **Confirm the loss boundary:** symmetry-broken loss (tilt/disorder, where F_i ≠ ⟨n_i⟩ ≠ geo)
+  to verify F_i adds nothing beyond occupation — the decisive disentangling (clean chain only
+  separates them at J/U=0.12). *Gated — not yet approved.*
+- **B — Liouvillian modes:** which relaxation mode carries the current (deeper, optional).
+- **C — larger L (trajectories / MPO):** later.
 
 ## Artifacts (this branch)
 - `mechanism_pilot.py` — clean-chain response-kernel pilot, L parametrized
@@ -132,6 +156,8 @@ manufactures it).
 - `detune_probe.py` — Step 3B coherent local-detuning probe (clean L=6).
 - `symbreak_detune.py` — Step 3C detuning under tilt + disorder; `finish_detune_disorder.py`
   resumable finisher (per-realization checkpoint; ~30-min env process cap).
+- `stage0_loss.py` — Step 3D multi-N machinery validation (gates A–E, all pass).
+- `loss_pilot.py` — Step 3D clean L=6 local-loss science pilot.
 - `outputs/mechanism_pilot/*.csv` — pilot_results_L{6,7,8}.csv, symbreak_{tilt,disorder}.csv,
   current_mech_L{6,7,8}.csv, current_symbreak_{tilt,disorder}.csv, detune_probe_L6.csv,
-  symbreak_detune_{tilt,disorder}.csv.
+  symbreak_detune_{tilt,disorder}.csv, loss_pilot_L6.csv.
