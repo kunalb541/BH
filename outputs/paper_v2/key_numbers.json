@@ -1,0 +1,218 @@
+{
+  "L6_rho_Cburn_DS": {
+    "value": 0.906,
+    "source": "current_mech_L6.csv"
+  },
+  "L6_rho_Cburn_handle": {
+    "value": 0.9358,
+    "source": "current_mech_L6.csv"
+  },
+  "L6_onset_JU": {
+    "value": 0.24,
+    "source": "current_mech_L6.csv"
+  },
+  "L7_rho_Cburn_DS": {
+    "value": 0.9123,
+    "source": "current_mech_L7.csv"
+  },
+  "L7_rho_Cburn_handle": {
+    "value": 0.9485,
+    "source": "current_mech_L7.csv"
+  },
+  "L7_onset_JU": {
+    "value": 0.3,
+    "source": "current_mech_L7.csv"
+  },
+  "L8_rho_Cburn_DS": {
+    "value": 0.8935,
+    "source": "current_mech_L8.csv"
+  },
+  "L8_rho_Cburn_handle": {
+    "value": 0.9158,
+    "source": "current_mech_L8.csv"
+  },
+  "L8_onset_JU": {
+    "value": 0.3,
+    "source": "current_mech_L8.csv"
+  },
+  "L6_rho_handle_oldmech": {
+    "value": -0.0276,
+    "source": "pilot_results_L6.csv"
+  },
+  "L7_rho_handle_oldmech": {
+    "value": 0.0925,
+    "source": "pilot_results_L7.csv"
+  },
+  "L8_rho_handle_oldmech": {
+    "value": -0.2586,
+    "source": "pilot_results_L8.csv"
+  },
+  "disorder_rho_handle_oldmech": {
+    "value": 0.0196,
+    "source": "symbreak_disorder.csv"
+  },
+  "deph_tilt_overlap": {
+    "value": 0.2917,
+    "source": "symbreak_tilt.csv"
+  },
+  "deph_tilt_pct_fi": {
+    "value": 96.4815,
+    "source": "symbreak_tilt.csv"
+  },
+  "deph_tilt_pct_geo": {
+    "value": 63.7037,
+    "source": "symbreak_tilt.csv"
+  },
+  "deph_tilt_rho_DS": {
+    "value": 0.1314,
+    "source": "symbreak_tilt.csv"
+  },
+  "deph_tilt_low_fi": {
+    "value": 95.0,
+    "source": "symbreak_tilt.csv"
+  },
+  "deph_tilt_low_geo": {
+    "value": 59.4444,
+    "source": "symbreak_tilt.csv"
+  },
+  "deph_disorder_overlap": {
+    "value": 0.5208,
+    "source": "symbreak_disorder.csv"
+  },
+  "deph_disorder_pct_fi": {
+    "value": 95.4444,
+    "source": "symbreak_disorder.csv"
+  },
+  "deph_disorder_pct_geo": {
+    "value": 72.1111,
+    "source": "symbreak_disorder.csv"
+  },
+  "deph_disorder_rho_DS": {
+    "value": 0.6526,
+    "source": "symbreak_disorder.csv"
+  },
+  "deph_disorder_low_fi": {
+    "value": 95.5556,
+    "source": "symbreak_disorder.csv"
+  },
+  "deph_disorder_low_geo": {
+    "value": 37.3016,
+    "source": "symbreak_disorder.csv"
+  },
+  "detune_pos_DS_tau3_mean": {
+    "value": 0.3288,
+    "source": "detune_probe_L6.csv"
+  },
+  "detune_neg_DS_tau3_mean": {
+    "value": -0.2808,
+    "source": "detune_probe_L6.csv"
+  },
+  "detune_tilt_pct_fi": {
+    "value": 68.5185,
+    "source": "symbreak_detune_tilt.csv"
+  },
+  "detune_tilt_pct_geo": {
+    "value": 44.6296,
+    "source": "symbreak_detune_tilt.csv"
+  },
+  "detune_dis_pct_fi": {
+    "value": 70.9259,
+    "source": "symbreak_detune_disorder.csv"
+  },
+  "detune_dis_pct_geo": {
+    "value": 58.7778,
+    "source": "symbreak_detune_disorder.csv"
+  },
+  "detune_tilt_rho_Cburn_DS": {
+    "value": 0.4545,
+    "source": "symbreak_detune_tilt.csv"
+  },
+  "detune_dis_rho_Cburn_DS": {
+    "value": 0.5546,
+    "source": "symbreak_detune_disorder.csv"
+  },
+  "detune_dis_lowov_fi": {
+    "value": 49.8413,
+    "source": "symbreak_detune_disorder.csv"
+  },
+  "detune_dis_lowov_geo": {
+    "value": 34.6032,
+    "source": "symbreak_detune_disorder.csv"
+  },
+  "loss_clean_rho_n": {
+    "value": 0.9477,
+    "source": "loss_pilot_L6.csv"
+  },
+  "loss_clean_rho_fi": {
+    "value": 0.8685,
+    "source": "loss_pilot_L6.csv"
+  },
+  "loss_clean_rho_cur": {
+    "value": 0.8679,
+    "source": "loss_pilot_L6.csv"
+  },
+  "loss_clean_rho_geo": {
+    "value": 0.8579,
+    "source": "loss_pilot_L6.csv"
+  },
+  "loss_sep_rho_n": {
+    "value": 0.9976,
+    "source": "loss_symbreak_mini.csv"
+  },
+  "loss_sep_rho_fi": {
+    "value": 0.7333,
+    "source": "loss_symbreak_mini.csv"
+  },
+  "loss_sep_rho_cur": {
+    "value": 0.5968,
+    "source": "loss_symbreak_mini.csv"
+  },
+  "loss_sep_rho_geo": {
+    "value": 0.1858,
+    "source": "loss_symbreak_mini.csv"
+  },
+  "loss_sep_pct_maxn": {
+    "value": 99.6491,
+    "source": "loss_symbreak_mini.csv"
+  },
+  "loss_sep_pct_fi": {
+    "value": 84.9123,
+    "source": "loss_symbreak_mini.csv"
+  },
+  "bond_induced_rho_endpointF": {
+    "value": -0.0975,
+    "source": "bond_pilot_L6.csv"
+  },
+  "bond_total_rho_endpointF": {
+    "value": 0.8654,
+    "source": "bond_pilot_L6.csv"
+  },
+  "bond_induced_rho_coh": {
+    "value": 0.0005,
+    "source": "bond_pilot_L6.csv"
+  },
+  "bond_total_rho_coh": {
+    "value": 0.603,
+    "source": "bond_pilot_L6.csv"
+  },
+  "bond_induced_rho_cur": {
+    "value": 0.0702,
+    "source": "bond_pilot_L6.csv"
+  },
+  "bond_total_rho_cur": {
+    "value": -0.8315,
+    "source": "bond_pilot_L6.csv"
+  },
+  "bond_induced_rho_occ": {
+    "value": -0.1922,
+    "source": "bond_pilot_L6.csv"
+  },
+  "bond_total_rho_occ": {
+    "value": 0.8569,
+    "source": "bond_pilot_L6.csv"
+  },
+  "bond_best_induced_absrho": {
+    "value": 0.1922,
+    "source": "bond_pilot_L6.csv"
+  }
+}

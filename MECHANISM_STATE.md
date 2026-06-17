@@ -35,7 +35,8 @@ at all couplings, shifting/removing the crossover.
   geo-set does not (−0.005); gradient makes D_S active at all J/U.
 - **Disorder (random geometry separation, 10 real × μ_max{0.5,1,2}):** overlap=0.52;
   pct_fi=95.4 vs geo=72.1; where overlap<0.5, pct_fi=95.6 vs geo=37.3 (F_i≥geo 100%);
-  D_S predicts handle (ρ=+0.65 overall, +0.78 within-realization); crossover
+  D_S predicts handle (ρ=+0.65 overall [robust, committed]; within-realization median +0.78
+  / mean +0.54, saturation-sensitive — cite the +0.65 overall); crossover
   interpolates from clean-like (μ=0.5) to always-on (μ=2.0).
 - F_i is **not dethroned** by any response-kernel selector tried (best in ~90%).
 
