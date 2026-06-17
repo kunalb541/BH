@@ -28,6 +28,7 @@ env/
 *.blg
 *.nav
 *.snm
+*Notes.bib
 
 # Checkpoint JSON files (large, reproducible via bh.py --resume)
 outputs/checkpoints/
