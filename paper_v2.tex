@@ -69,9 +69,10 @@ dephasing beats matched-budget random targeting in a ``positive pocket'' of coup
 (i) identify the dynamical mechanism, (ii) show it is not the redistribution susceptibility
 previously invoked, (iii) separate it from geometry under symmetry breaking, and (iv) map how the
 operative selector changes as the intervention class is varied---dephasing, coherent detuning,
-particle loss, and direct bond control. The central finding is that description privilege is
-\emph{intervention-relative}: $\Fi$ is the right selector for number-conserving transport handles,
-while local occupation takes over for number-changing loss. All results are exact (no Trotter,
+particle loss, and direct bond control. The central finding is that the operative selector is
+\emph{intervention-relative}---$\Fi$ for number-conserving transport handles (dephasing,
+detuning), local occupation for number-changing loss---a structural point we return to in the
+Discussion. All results are exact (no Trotter,
 unravelling, or mean-field); the scope is correspondingly limited to small chains, $L\le8$.
 
 \section{Model and methods}
@@ -191,13 +192,14 @@ two selectors most disagree. $\Fi$ wins; geometry collapses below the median at 
 \label{fig:geo}
 \end{figure}
 
-\begin{table}[tbp]
+\begin{table*}[tbp]
 \centering
 \caption{Geometry separation for both $N$-conserving channels. ``low-overlap'' restricts to
-disorder realizations with $\Fi$--geometry overlap $<0.5$ in the pocket.}
+disorder realizations where $\Fi$ and geometry select \emph{disjoint} sites (overlap $0$) in the
+pocket. Handle percentiles are top-$\Fi$ vs.\ geometric-centre selectors.}
 \label{tab:T3}
 \input{outputs/paper_v2/tables/T3_geometry.tex}
-\end{table}
+\end{table*}
 
 \subsection{Generality: coherent detuning}
 Replacing the dissipative dephasing handle with a coherent local detuning
@@ -225,8 +227,11 @@ predictor (Table~\ref{tab:T4}, Fig.~\ref{fig:loss}), decisively so under symmetr
 $\rho(\Delta N_{\mathrm{tot}},\langle\nop_i\rangle)=+0.998$ versus $+0.73$ for $\Fi$ in the
 realizations where the two selectors separate, and the maxn selector reaches the $99.6$th
 percentile versus $84.9$ for $\Fi$. Physically, loss directly removes particles from occupied
-sites, so the operative variable is occupation; $\Fi$'s residual loss-predictive power is only its
-clean-chain correlation with $\langle\nop_i\rangle$. The boundary between the two selectors is thus
+sites, so the operative variable is occupation. This is not a foregone conclusion: the competing
+transport hypothesis---that high-current sites sustain \emph{more} loss through current
+replenishment---is present but subdominant to raw occupation (Table~\ref{tab:T4}, where occupation
+out-predicts current and $\Fi$), and $\Fi$'s residual loss-predictive power is only its clean-chain
+correlation with $\langle\nop_i\rangle$. The boundary between the two selectors is thus
 \emph{transport-modulation vs.\ particle-removal}---equivalently, particle-number conservation.
 
 \begin{table}[tbp]
