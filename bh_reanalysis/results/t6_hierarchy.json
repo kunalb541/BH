@@ -1,0 +1,6 @@
+{
+  "status": "NOT TESTABLE on existing data",
+  "reason": "Existing simulation data contains only one intervention type (additional dephasing). Particle injection, phase imprinting, and local heating were never simulated.",
+  "recommended_followup": "Simulate at least one additional intervention type (e.g., local heating via amplitude damping, or per-site particle injection) at the same (L, J/U, tau) cells. Then run T6 from the brief on the augmented dataset.",
+  "locked_outcome": "DECLARATION (pre-registered as not-testable)"
+}
