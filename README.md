@@ -13,12 +13,13 @@ exact (no Trotter, stochastic unravelling, or mean field), restricted to small c
 
 | Track | Manuscript | Question | Status |
 |---|---|---|---|
-| **1. Predictive** | `paper.tex` / `paper.pdf` | Does targeting the highest-variance sites with extra dephasing change future occupation loss more than matched-budget random targeting? | submitted to *Physical Review A* (under review) |
+| **1. Predictive** | `paper.tex` / `paper.pdf` | Does targeting the highest-variance sites with extra dephasing change future occupation loss more than matched-budget random targeting? | submitted to *Physical Review A*; declined at editorial assessment (insufficient significance / broad interest) |
 | **2. Mechanism** | `paper_v2.tex` / `paper_v2.pdf` | *Why* does it work, and does the operative control variable depend on the intervention class? | in preparation |
 | (supporting) | `bh_reanalysis/` | Observer-geometry / principal-angle reanalysis of the same outputs | internal, pre-registered |
 
-`paper_v2.tex` is the current mechanism manuscript; `paper.tex` is preserved as the version under
-review. `paper_expanded_may6.tex` is an earlier expanded draft kept only as reference material.
+`paper_v2.tex` is the current mechanism manuscript and the **response to that rejection**;
+`paper.tex` is preserved as the submitted (declined) version. `paper_expanded_may6.tex` is an
+earlier expanded draft kept only as reference material.
 
 ---
 
