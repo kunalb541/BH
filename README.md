@@ -1,341 +1,155 @@
-### Local number variance as a redistribution handle in the one-dimensional Bose–Hubbard chain
+# Variance as an intervention-relative control selector in an open Bose–Hubbard chain
 
-**Kunal Bhatia** — Independent Researcher, Heidelberg, Germany  
+**Kunal Bhatia** — Independent Researcher, Heidelberg, Germany
 ORCID: [0009-0007-4447-6325](https://orcid.org/0009-0007-4447-6325)
 
-Companion code for the paper submitted to *Physical Review A*.
+Companion code and data for an exact-Lindblad study of the 1D open Bose–Hubbard chain. The
+repository now hosts **two related manuscripts plus a supporting reanalysis**; all simulation is
+exact (no Trotter, stochastic unravelling, or mean field), restricted to small chains ($L\le 8$).
 
 ---
 
-## What this paper does
+## Two tracks
 
-In a 1D open Bose–Hubbard chain under uniform Lindblad dephasing, sites develop spatially heterogeneous local occupation variance F_i = ⟨n_i²⟩ − ⟨n_i⟩². This paper tests whether targeting additional dephasing at the highest-F_i sites produces measurably more local occupation loss than applying the same dephasing budget to randomly chosen sites.
+| Track | Manuscript | Question | Status |
+|---|---|---|---|
+| **1. Predictive** | `paper.tex` / `paper.pdf` | Does targeting the highest-variance sites with extra dephasing change future occupation loss more than matched-budget random targeting? | submitted to *Physical Review A* (under review) |
+| **2. Mechanism** | `paper_v2.tex` / `paper_v2.pdf` | *Why* does it work, and does the operative control variable depend on the intervention class? | in preparation |
+| (supporting) | `bh_reanalysis/` | Observer-geometry / principal-angle reanalysis of the same outputs | internal, pre-registered |
 
-**"Redistribution handle" is used operationally:** a site selector is called a redistribution handle if applying an explicit additional Lindblad dephasing term at the selected sites produces a statistically distinguishable future response from a matched-budget random-site intervention, with the pre-intervention state held fixed. This is an intervention contrast inside a fully specified dynamical model, not statistical causal identification from observational data.
-
-**Protocol:**
-1. Evolve the ground state under uniform baseline dephasing (γ = 0.1) for burn-in t_burn = 5 to build heterogeneous fluctuation structure.
-2. Compute F_i; select the top-k sites (k = ⌈L/3⌉).
-3. **Targeted arm**: apply extra dephasing γ_extra = 0.5 at the k high-F_i sites.
-4. **Random arm**: apply the same total budget (k × γ_extra) to k randomly chosen sites (100 independent draws).
-5. Compare local occupation loss ∑_{i∈S} max(0, ⟨n_i⟩_t − ⟨n_i⟩_{t+τ}) at the intervention sites.
-
-Because the targeted arm is deterministic for a fixed condition, the bootstrap CI (1000 resamples) reflects trial-level variability in the matched random-control arm, not uncertainty over independent targeted realizations.
-
-All evolution is **exact Lindblad** (no approximations, no Trotter decomposition, no stochastic unravelling).
+`paper_v2.tex` is the current mechanism manuscript; `paper.tex` is preserved as the version under
+review. `paper_expanded_may6.tex` is an earlier expanded draft kept only as reference material.
 
 ---
 
-## Key results
+## The result in brief (Track 2)
 
-### Primary sweep (clean chain, L ∈ {6, 7, 8})
+For a selected site set $S$ define the **directed self-drain** $D_S(\tau)=-\sum_{i\in S}\Delta\langle\hat n_i\rangle(\tau)$
+($D_S>0$ ⇒ the selected sites lose occupation). Because the dephasing dissipator conserves each
+$\langle\hat n_i\rangle$ exactly, particle-number continuity makes $D_S$ the **time-integrated net
+outward current** of $S$. The findings:
 
-Three regimes across J/U:
+- The handle works only in the **directed self-draining** regime; the burn-in current divergence
+  of $S$ predicts it (Spearman $\rho\approx0.9$ at $L=6,7,8$), and the $J/U$ crossover is a
+  **current reversal** (inward/fill → outward/drain).
+- The earlier "redistribution susceptibility" explanation is **non-discriminating** ($\rho\approx0$
+  with success) and is retired; geometry is a correlate, not fundamental.
+- The operative selector is **intervention-relative**:
 
-| Regime | J/U | Result |
-|--------|-----|--------|
-| **Low-coupling** | 0.12 | Near-zero to weakly harmful — 95% CI below zero at the paper's burn-in, small in magnitude (|mean| ≲ 0.01), partly burn-in-sensitive at L=6 |
-| **Crossover** | ≈ 0.20 | Size- and horizon-sensitive; not robustly positive or negative |
-| **Positive pocket** | ≥ 0.30 | Targeted > random — 95% CI strictly above zero at all tested L, τ |
+| intervention | conserves $N$? | coherent? | **operative selector** |
+|---|:--:|:--:|:--:|
+| dephasing | yes | no | **$F_i$** (reads pre-existing current) |
+| detuning | yes | yes | **$F_i$** (imposes current) |
+| local loss | no | no | **$\langle n_i\rangle$** (direct removal) |
+| bond hopping mod. | yes | yes | site-level $F_i$ (not bond) |
 
-The J/U ≈ 0.20 boundary is a finite-size dynamical crossover in the Lindblad response, not the thermodynamic Mott–superfluid transition.
+The boundary between the two selectors is **transport-modulation vs. particle-removal**
+(equivalently, particle-number conservation).
 
-Best effects at J/U = 0.40, τ = 3, growing with system size:
-
-| L | mean advantage |
-|---|---------------|
-| 6 | +0.047 |
-| 7 | +0.068 |
-| 8 | +0.072 |
-
-### Disorder selector sweep (L=6, 9 selectors, 50 realizations)
-
-At strong disorder (μ_max = 2.0, J/U = 0.4, τ = 3), fi ranks first among all tested selectors:
-
-| Selector | Mean advantage |
-|----------|---------------|
-| **fi** (variance) | **+0.049** |
-| maxn | +0.034 |
-| geo (center) | +0.032 |
-| gen (generator) | +0.028 |
-| dis_amp | +0.023 |
-| bdy | +0.010 |
-| dis_anti | +0.005 |
-| anti-fi | +0.002 |
-| minn | ≈ 0 |
-
-The fi−geo gap grows monotonically with μ_max and J/U. dis_amp ranks well below fi, confirming F_i carries independent information beyond raw disorder amplitude.
-
-### Shell-matched permutation controls
-
-fi beats all within-shell permutations by +0.002 to +0.006 at τ=3, J/U ≥ 0.30, establishing that F_i carries within-shell information beyond shell geometry.
-
-### Deterministic inhomogeneous (tilt) chain
-
-In a tilted chain where F_i ≠ geo by construction, fi > geo with a gap of +0.032 to +0.054 at J/U = 0.40, τ = 3.
-
-### Gamma scan
-
-The advantage peaks near γ_extra ≈ 0.5–1.0 and collapses at very high rates. The paper's choice γ_extra = 0.5 is near-optimal.
-
-### Exhaustive subset ranking (hardening)
-
-All C(L,k) intervention subsets evaluated exactly (C(6,2)=15, C(7,3)=35, C(8,3)=56):
-
-| L | J/U | τ=1 | τ=2 | τ=3 |
-|---|-----|-----|-----|-----|
-| 6 | 0.30 | 100% | 100% | 100% |
-| 6 | 0.40 | 100% | 100% | 100% |
-| 7 | 0.30 | 100% | 100% | 100% |
-| 7 | 0.40 | 100% | 100% | 100% |
-| 8 | 0.30 | 100% | 100% | 100% |
-| 8 | 0.40 |  98% |  98% |  98% |
-
-In the positive pocket (J/U ≥ 0.30) the F_i-selected subset is globally optimal or tied at every tested (L, τ), except L=8, J/U=0.40 where it is 98th percentile (1 of 56 subsets ties/beats it). Low-coupling regime: 21–40th percentile. Crossover: 29–87th percentile.
-
-### Target robustness
-
-In every positive-pocket condition: signed gap > clipped gap, absolute gap > 0, redistribution gap > 0. The positive-part clipping is conservative — removing it yields a larger advantage.
-
-### Susceptibility: redistribution, not local depletion
-
-Spearman(F_i, χ_redist) > 0 in every condition (all L, J/U, τ, δγ). Spearman(F_i, χ_clip) is negative at τ=1,2 across all regimes. F_i tracks redistribution susceptibility, not local-depletion susceptibility. Sign pattern stable across δγ ∈ {0.05, 0.1, 0.2}.
-
-### nmax truncation check
-
-L=8, N=4 repeated with nmax=4 (D=322→330, the only binding case). Regime ordering, sign pattern, and top-F_i percentile tier unchanged. Gap shifts < 2×10⁻⁴.
-
-### Burn-in sensitivity
-
-Positive-pocket conclusion (J/U=0.40) is stable under 0.5×–2× burn-in variation at both L=6 and L=8 (gap positive, F_i subset in top quartile or above). Low-coupling response (J/U=0.12) is much smaller in magnitude (|gap| ≲ 0.006) and partly burn-in-sensitive at L=6.
-
-| L | J/U | 0.5× gap | 1.0× gap | 2.0× gap | Pct. range | Sign stable |
-|---|-----|----------|----------|----------|------------|-------------|
-| 6 | 0.12 | −0.002 | −0.002 | +0.003 | 40–80% | no |
-| 6 | 0.40 | +0.064 | +0.047 | +0.012 | 87–100% | yes |
-| 8 | 0.12 | −0.005 | −0.006 | <0.001 | 21–54% | yes |
-| 8 | 0.40 | +0.065 | +0.073 | +0.009 | 80–100% | yes |
-
-### Spatial response (Fig. 3)
-
-Two-panel comparison at L=6, τ=2:
-- **(a) Low-coupling regime (J/U=0.12):** high-F_i selected sites (2,3) carry near-zero occupation change; the redistribution signal falls at unselected sites 1 and 4, where targeting provides no advantage.
-- **(b) Positive pocket (J/U=0.30):** targeted intervention drives deeper occupation redistribution across non-selected sites than random, consistent with the redistribution-handle interpretation.
+The original predictive thesis (Track 1) — top-$F_i$ targeting beats matched random in the
+"positive pocket" $J/U\ge0.30$, robust across $L=6,7,8$ and the disorder/tilt/shell-permutation
+controls — remains intact and is the content of `paper.tex`.
 
 ---
 
-## System parameters
+## Repository map
 
-| Parameter | Value |
-|-----------|-------|
-| Model | 1D Bose–Hubbard, open BC |
-| Filling | Half-filling: N = ⌊L/2⌋ |
-| n_max | 3 per site |
-| L (primary sweep) | 6, 7, 8 |
-| N | 3 (L=6,7) / 4 (L=8) |
-| Hilbert space D | 56 (L=6), 84 (L=7), 322 (L=8) |
-| Liouvillian dim | D² = 3136, 7056, 103684 |
-| Matrix storage | Dense (D ≤ 84), Sparse CSR (D ≥ 322) |
-| Baseline dephasing γ | 0.1 |
-| Extra dephasing γ_extra | 0.5 |
-| Burn-in time t_burn | 5.0 (units of ℏ/U) |
-| Time horizons τ | 1, 2, 3 |
-| Random trials per condition | 100 |
-| Bootstrap resamples | 1000 |
-| Random seed | 20260325 |
+Everything lives at the top level (flat) plus `bh_reanalysis/` and `outputs/`. Grouped by purpose:
 
----
+**Simulation engine**
+- `bh.py` — exact-Lindblad Bose–Hubbard engine and the full experiment battery (primary sweep,
+  disorder/selector sweep, shell-perm, inhomogeneous tilt, gamma scan). CLI-driven (`--help`).
+- `bh_hardening.py` — hardening battery: exhaustive subset ranking, susceptibility, burn-in
+  sensitivity, $n_{\max}$ truncation check. Defines `build_condition`/`evolve_with_extra` reused below.
 
-## Repository structure
+**Mechanism program (Track 2) — each writes CSVs to `outputs/mechanism_pilot/`**
+- `mechanism_pilot.py [L]` — response-kernel handle + size scaling ($L=6,7,8$).
+- `current_mechanism.py [L]`, `current_symbreak.py` — current/continuity diagnostic ($C_S^{\rm burn}\!\to\!D_S$).
+- `symbreak_diag.py tilt|disorder` — geometry separation under symmetry breaking (dephasing).
+- `detune_probe.py`, `symbreak_detune.py tilt|disorder`, `finish_detune_disorder.py` — coherent detuning.
+- `stage0_loss.py`, `loss_pilot.py`, `loss_symbreak.py` — multi-$N$ local loss (machinery + pilots).
+- `bond_pilot.py` — per-bond-$J$ hopping modulation (site-vs-bond control).
+- `mechanism_parity_check.py` — sparse vs dense Liouvillian parity ($\sim10^{-15}$).
+- `make_paper_assets.py` — regenerates `paper_v2` figures, tables, and `key_numbers.json` from the CSVs.
 
-```
-BH/
-├── bh.py                    # Complete simulation package
-├── bh_hardening.py          # Exhaustive subset ranking + target robustness tests
-├── run_all.sh               # AWS batch script
-├── test_bh.py               # Core physics regression tests (pytest)
-├── test_new_experiments.py  # Selector sweep, dis_amp, inhomogeneous, gamma-scan tests
-├── cover_letter.txt         # PRA submission cover letter
-├── paper.tex                # Manuscript (REVTeX 4.2 / PRA format)
-├── refs.bib                 # BibTeX references
-├── paper.pdf                # Compiled manuscript
-└── outputs/                 # Generated outputs (not tracked in git)
-    ├── bh_hardening/        # Exhaustive subset, robustness, susceptibility, nmax CSVs + figures
-    ├── checkpoints/         # Per-condition JSON checkpoints (resume on interruption)
-    ├── data/                # config.json, results CSVs
-    ├── figures/             # PDF/PNG figures (fig1–fig5 + fig3 two-panel)
-    └── tables/              # LaTeX tables
-```
+**Manuscripts & bibliography**
+- `paper.tex`/`paper.pdf` (Track 1), `paper_v2.tex`/`paper_v2.pdf` (Track 2),
+  `paper_expanded_may6.tex` (reference draft), `refs.bib`, `cover_letter.txt`.
+
+**Records (source-of-truth, human-readable)**
+- `CLAIM_EVIDENCE_MAP.md` — **start here for reproducibility**: every paper_v2 claim → figure/table → source CSV → verified value.
+- `MECHANISM_STATE.md` — full chronological mechanism log (steps 1–4; what is earned/retired).
+- `CLAIM_STATUS.md` — one-page milestone. `PAPER_OUTLINE.md` — rewrite plan.
+- `LOSS_PILOT_PREREG.md`, `BOND_HOPPING_PREREG.md` — pre-registrations.
+
+**Tests & build**
+- `test_bh.py`, `test_new_experiments.py` — unit tests (run first).
+- `build.sh` — compile the papers. `run_all.sh` — the original AWS/EC2 batch campaign script.
+
+**Data (`outputs/`)**
+- `mechanism_pilot/` — Track-2 result CSVs (+ `paper_v2/` figures, tables, `key_numbers.json`).
+- `bh_hardening/` — hardening CSVs/figures. `checkpoints/` — per-condition sweep checkpoints
+  (L8/L9 tracked; the rest reproducible via `bh.py --resume`). `figures/`, `tables/`, `data/` — Track-1 paper assets.
 
 ---
 
 ## Reproducing the results
 
-### Requirements
+Requirements: Python 3.11+, `numpy scipy pandas matplotlib tqdm`. Run all commands **from the repo
+root** (scripts import `bh.py`/`bh_hardening.py`); prefix with `PYTHONPATH=.` if needed.
 
 ```bash
-pip install numpy scipy pandas matplotlib seaborn tqdm
+python3 -m pytest test_bh.py test_new_experiments.py -q   # tests first
 ```
 
-### Run the tests first
+**Track 2 (mechanism) — fast, exact, laptop-scale.** Each line writes the CSV the paper draws from:
 
-```bash
-# Core physics tests (Hilbert space, Hamiltonian, Lindblad, F_i)
-pytest test_bh.py -v
-
-# Selector sweep, dis_amp, inhomogeneous, gamma-scan tests
-python test_new_experiments.py
-```
-
-### Primary sweep (clean chain)
-
-```bash
-# L=6,7,8 × J/U={0.12,0.20,0.30,0.40} × τ={1,2,3}
-python bh.py --l-list 6 7 8 --ju-list 0.12 0.20 0.30 0.40 --tau-list 1 2 3 --workers 4
-```
-
-### Disorder + selector experiments
-
-```bash
-# Selector sweep — all 9 selectors including dis_amp/dis_anti
-python bh.py --selector-sweep --l-list 6 --ju-list 0.20 0.30 0.40 --tau-list 1 2 3 \
-  --disorder-strengths 0.10 0.20 0.30 0.50 1.00 2.00 \
-  --disorder-realizations 50 --dis-workers 4 --resume
-
-# Disorder realizations (fi vs geo)
-python bh.py --disorder --l-list 6 --ju-list 0.20 0.30 0.40 --tau-list 1 2 3 \
-  --disorder-strengths 0.50 1.00 2.00 --disorder-realizations 50 --dis-workers 4 --resume
-
-# Shell-matched permutation controls
-python bh.py --shell-perm --l-list 6 --ju-list 0.20 0.30 0.40 --tau-list 1 2 3 \
-  --disorder-strengths 0.10 0.20 0.30 --disorder-realizations 50 --dis-workers 4 --resume
-
-# Inhomogeneous chain (deterministic tilt)
-python bh.py --inhomogeneous --l-list 6 --ju-list 0.20 0.30 0.40 --tau-list 1 2 3 \
-  --inhom-tilts 0.5 1.0 2.0 --inhom-patterns tilt step --resume
-
-# Gamma scan
-python bh.py --gamma-scan --l-list 6 --ju-list 0.30 0.40 --tau-list 1 2 3 \
-  --disorder-strengths 0.10 --disorder-realizations 50 \
-  --gamma-scan-values 0.1 0.2 0.5 1.0 2.0 --dis-workers 4 --resume
-```
-
-Per-condition checkpoints are written to `outputs/checkpoints/` — safe to interrupt and resume with `--resume`.
-
-**Expected runtimes per realization** (4-core laptop):
-
-| L | D | Time per realization |
+| Result (paper_v2) | Command | Output CSV |
 |---|---|---|
-| 6 | 56 | ~2–3 min |
-| 7 | 84 | ~5–8 min |
+| Handle + size scaling | `python3 mechanism_pilot.py 6` (and `7`, `8`) | `pilot_results_L{6,7,8}.csv` |
+| Current/continuity mechanism | `python3 current_mechanism.py 6` (and `7`,`8`) | `current_mech_L{6,7,8}.csv` |
+| Current under symmetry breaking | `python3 current_symbreak.py` | `current_symbreak_{tilt,disorder}.csv` |
+| Geometry separation (dephasing) | `python3 symbreak_diag.py tilt` / `disorder` | `symbreak_{tilt,disorder}.csv` |
+| Detuning (clean + sign) | `python3 detune_probe.py` | `detune_probe_L6.csv` |
+| Detuning (symmetry-broken) | `python3 symbreak_detune.py tilt` / `disorder 10` | `symbreak_detune_{tilt,disorder}.csv` |
+| Loss (validate → pilots) | `python3 stage0_loss.py`; `loss_pilot.py`; `loss_symbreak.py` | `loss_pilot_L6.csv`, `loss_symbreak_mini.csv` |
+| Bond control | `python3 bond_pilot.py` | `bond_pilot_L6.csv` |
+| Figures + tables + key numbers | `python3 make_paper_assets.py` | `outputs/paper_v2/…` |
 
-### Hardening tests (exhaustive subset ranking, susceptibility, nmax check)
+Then compile: `pdflatex paper_v2 && bibtex paper_v2 && pdflatex paper_v2 && pdflatex paper_v2`.
+The mechanism pilots run in seconds–minutes each; sparse/dense agreement is checked by
+`mechanism_parity_check.py`. The loss disorder sweep self-checkpoints per realization
+(`finish_detune_disorder.py` shows the resumable pattern).
 
-```bash
-# Full battery — all L, all J/U, all tau (~60 min)
-python bh_hardening.py --full
+**Track 1 (predictive paper).** The primary sweep, disorder/selector, shell-perm, inhomogeneous,
+and gamma-scan experiments are driven by `bh.py` (see `--help`); the hardening battery (exhaustive
+ranking, susceptibility, burn-in, $n_{\max}$) by `bh_hardening.py`. The full campaign was run on
+AWS/EC2 (`run_all.sh`) with per-condition checkpoints synced to S3 and pulled into
+`outputs/checkpoints/`.
 
-# With delta-gamma sensitivity for susceptibility (~3× longer)
-python bh_hardening.py --full --delta-gamma 0.05 0.1 0.2
-
-# nmax truncation check — L=8 nmax=3 vs nmax=4 (~15 min)
-python bh_hardening.py --nmax-check --no-test2 --skip-sanity --no-figures
-
-# Burn-in sensitivity check — L=6,8 × J/U=0.12,0.40 × multipliers 0.5,1.0,2.0
-python bh_hardening.py --burnin-check --burnin-L 6 8 --burnin-JU 0.12 0.40 \
-  --burnin-multipliers 0.5 1.0 2.0 --burnin-tau 3
-
-# Quick smoke test — L=6 only (~2 min)
-python bh_hardening.py --quick
-```
-
-Outputs → `outputs/bh_hardening/`: `susceptibility_results.csv`, `subset_ranking_results.csv`, `target_robustness_results.csv`, `nmax_truncation_results.csv`, `burnin_sensitivity_results.csv`, `summary_hardening.json`, figures.
-
-### Regenerate Fig. 3 (two-panel spatial response)
-
-After running the primary sweep, Fig. 3 is regenerated automatically by `make_figures`. To regenerate standalone from saved CSV data:
-
-```bash
-python3 -c "
-import sys, json, ast
-import pandas as pd
-sys.path.insert(0, '.')
-import bh
-df = pd.read_csv('outputs/data/results_L6.csv')
-all_res = []
-for (L, ju), grp in df.groupby(['L', 'J_over_U']):
-    results = [{'J_over_U': r.J_over_U, 'tau': r.tau, 'mean_diff': r.mean_diff,
-                'ci_lo': r.ci_lo, 'ci_hi': r.ci_hi,
-                'selected': ast.literal_eval(r.selected),
-                'mechanism': ast.literal_eval(r.mechanism)} for _, r in grp.iterrows()]
-    all_res.append({'L': int(L), 'results': results})
-cfg = json.load(open('outputs/data/config.json'))
-bh.make_figures(all_res, cfg)
-"
-```
-
-### Compile the paper
-
-```bash
-pdflatex paper.tex && bibtex paper && pdflatex paper.tex && pdflatex paper.tex
-```
+### System parameters (both tracks)
+1D Bose–Hubbard, open BC, half-filling $N=\lfloor L/2\rfloor$, $n_{\max}=3$; $L\in\{6,7,8\}$
+($D=56,84,322$); baseline $\gamma=0.1$, $\gamma_{\rm extra}=0.5$, burn-in $t=5$, horizons
+$\tau\in\{1,2,3\}$; dense for $D\le84$, sparse CSR above (mechanism scripts force sparse for
+$L\ge7$). Seed `20260325`.
 
 ---
 
-## Code overview (`bh.py`)
+## What is and is not claimed
+- **Earned:** the intervention-relative selector map above, the directed-self-drain/current
+  mechanism, and its size support to $L=8$ — all from exact Lindblad evolution, with every
+  headline number independently re-verified (see `CLAIM_EVIDENCE_MAP.md`).
+- **Not claimed:** the thermodynamic limit, larger $L$, a universal control law, all intervention
+  types, particle injection, or laboratory realization. The $J/U\approx0.20$ feature is a
+  finite-size dynamical crossover, not the Mott–superfluid transition.
+- The observer-geometry reanalysis's T1 "predictive–causal dissociation" is **retired** as a
+  finding (a self-correlation artifact; honest rate $\sim0.52$, not $\sim0.90$); only its
+  thermalization-convergence (T4) and scoring-rule-fork (T5) outcomes are kept as supporting.
 
-| Function | Purpose |
-|----------|---------|
-| `build_basis(L, N, nmax)` | Enumerate Fock basis states in fixed-N sector |
-| `basis_index(basis)` | Dict mapping state tuple → row index |
-| `number_op(site, D, basis)` | Diagonal number operator for site i |
-| `build_hamiltonian(L, J, U, nmax, basis, idx_map)` | Bose–Hubbard Hamiltonian |
-| `build_liouvillian(H, L_ops, gammas)` | Lindblad superoperator; dissipator stored as diagonal 1D array |
-| `evolve_rho(rho, liouvillian, tau)` | Exact time evolution via `expm_multiply` |
-| `site_expectations(rho, n_ops)` | ⟨n_i⟩ for all sites |
-| `site_variances(rho, n_ops, n2_ops)` | F_i = ⟨n_i²⟩ − ⟨n_i⟩² for all sites |
-| `run_selector_sweep_realization(...)` | Full 9-selector protocol for one disorder realization |
-| `run_disorder_realization(...)` | fi vs geo for one disorder realization |
-| `run_inhomogeneous_experiment(...)` | Deterministic asymmetry experiment |
-| `run_gamma_scan_experiment(...)` | γ_extra robustness scan |
-| `make_tables(...)` | Generate LaTeX-ready tables |
-| `make_figures(...)` | Generate PDF/PNG figures (fig3 is two-panel: low-coupling + positive-pocket) |
-
-**Key implementation notes:**
-- `expm_multiply` is exact to floating-point precision (Al-Mohy & Higham 2011).
-- Dissipator diagonal: for L_i = n_i, the D²×D² dissipator is diagonal. Stored as a 1D array — avoids OOM at L=6,7.
-- Parallel disorder realizations use `concurrent.futures.ProcessPoolExecutor` with `as_completed` (deadlock-free).
-- Per-realization checkpoint resume: each condition writes a JSON file; `--resume` skips existing files.
-- Bootstrap: 1000 resamples, vectorised NumPy, per condition. Because the targeted arm is deterministic, the CI measures random-control arm variability.
-
-**Selectors compared in `run_selector_sweep_realization`:**
-
-| Selector | Sites chosen |
-|----------|-------------|
-| `fi` | Top-k by F_i = ⟨n_i²⟩ − ⟨n_i⟩² |
-| `geo` | Geometric center k sites |
-| `maxn` | Top-k by ⟨n_i⟩ |
-| `minn` | Bottom-k by ⟨n_i⟩ |
-| `bdy` | Boundary (outermost k) |
-| `anti` | Bottom-k by F_i |
-| `gen` | Top-k by generator action \|⟨[L_i, H]⟩\| |
-| `dis_amp` | Top-k by \|μ_i\| (disorder amplitude) |
-| `dis_anti` | Bottom-k by \|μ_i\| |
-
----
-
-## What is not claimed
-
-- That high-F_i targeting is **optimal** among all possible selectors.
-- That the effect holds at all J/U — it is near-zero to weakly harmful at J/U = 0.12 and transitional near J/U ≈ 0.20.
-- That results extend to the **thermodynamic limit** — exact Lindblad is feasible through L = 8; larger sizes require approximate methods (e.g., MPO Lindblad).
-- That the J/U ≈ 0.20 boundary corresponds to the thermodynamic Mott–superfluid transition — in these small open chains it is a finite-size dynamical crossover, not a sharp equilibrium phase boundary.
-- That fi is independent of geometry in the **clean, symmetric chain** — reflection symmetry forces F_i to peak at geometric-center sites, so fi = geo identically there. Symmetry breaking (disorder or inhomogeneous potential) is required for separation.
-- That dis_amp is the only alternative explanation — it is a strong representative control, not an exhaustive one.
-- That a full microscopic account of the crossover (e.g., Liouvillian spectral decomposition) has been provided — the susceptibility analysis establishes the redistribution structure empirically; spectral mechanism is left for future work.
-
----
+## Branches & provenance
+`main` is the integrated state. `pre-integration-2026-06-06` tags the pre-merge restore point.
+`bh-reanalysis-archive` holds the reanalysis history; `claude/happy-yalow-455c61` is the original
+(orphaned) worktree branch that also contains the expanded draft.
 
 ## License
-
-MIT — see [LICENSE](LICENSE).
+See `LICENSE`.
