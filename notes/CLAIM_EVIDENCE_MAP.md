@@ -39,6 +39,7 @@ numbers — the strict `<` is intended and stated.)
 
 ## Appendix-validation provenance
 The appendix validation figures (sparse=dense to ~1e-15; γ_loss=0 ≡ fixed-N to 2e-16; per-bond-J
-≡ scalar-J) come from committed, re-runnable **validation scripts** (`mechanism_parity_check.py`,
-`stage0_loss.py`, `bond_pilot.py` Stage 0), not result CSVs — standard for a methods appendix and
-reproducible on demand.
+≡ scalar-J) come from committed, re-runnable **validation scripts** (`mechanism/mechanism_parity_check.py`,
+`mechanism/stage0_loss.py`, `mechanism/bond_pilot.py` Stage 0), not result CSVs — standard for a
+methods appendix and reproducible on demand. (All scripts live in `mechanism/`; run from repo root
+with `PYTHONPATH=.`.)

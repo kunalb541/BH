@@ -63,7 +63,7 @@ Everything lives at the top level (flat) plus `bh_reanalysis/` and `outputs/`. G
 - `bh_hardening.py` — hardening battery: exhaustive subset ranking, susceptibility, burn-in
   sensitivity, $n_{\max}$ truncation check. Defines `build_condition`/`evolve_with_extra` reused below.
 
-**Mechanism program (Track 2) — each writes CSVs to `outputs/mechanism_pilot/`**
+**Mechanism program (Track 2) — in `mechanism/`; each writes CSVs to `outputs/mechanism_pilot/` (run from root, `PYTHONPATH=.`)**
 - `mechanism_pilot.py [L]` — response-kernel handle + size scaling ($L=6,7,8$).
 - `current_mechanism.py [L]`, `current_symbreak.py` — current/continuity diagnostic ($C_S^{\rm burn}\!\to\!D_S$).
 - `symbreak_diag.py tilt|disorder` — geometry separation under symmetry breaking (dephasing).
@@ -77,8 +77,8 @@ Everything lives at the top level (flat) plus `bh_reanalysis/` and `outputs/`. G
 - `paper.tex`/`paper.pdf` (Track 1), `paper_v2.tex`/`paper_v2.pdf` (Track 2),
   `paper_expanded_may6.tex` (reference draft), `refs.bib`, `cover_letter.txt`.
 
-**Records (source-of-truth, human-readable)**
-- `CLAIM_EVIDENCE_MAP.md` — **start here for reproducibility**: every paper_v2 claim → figure/table → source CSV → verified value.
+**Records — in `notes/` (source-of-truth, human-readable)**
+- `notes/CLAIM_EVIDENCE_MAP.md` — **start here for reproducibility**: every paper_v2 claim → figure/table → source CSV → verified value.
 - `MECHANISM_STATE.md` — full chronological mechanism log (steps 1–4; what is earned/retired).
 - `CLAIM_STATUS.md` — one-page milestone. `PAPER_OUTLINE.md` — rewrite plan.
 - `LOSS_PILOT_PREREG.md`, `BOND_HOPPING_PREREG.md` — pre-registrations.
@@ -96,8 +96,8 @@ Everything lives at the top level (flat) plus `bh_reanalysis/` and `outputs/`. G
 
 ## Reproducing the results
 
-Requirements: Python 3.11+, `numpy scipy pandas matplotlib tqdm`. Run all commands **from the repo
-root** (scripts import `bh.py`/`bh_hardening.py`); prefix with `PYTHONPATH=.` if needed.
+Requirements: Python 3.11+, `numpy scipy pandas matplotlib tqdm`. **Run from the repo root with
+`PYTHONPATH=.`** so the `mechanism/` scripts find `bh.py`/`bh_hardening.py` at the root.
 
 ```bash
 python3 -m pytest test_bh.py test_new_experiments.py -q   # tests first
@@ -105,17 +105,17 @@ python3 -m pytest test_bh.py test_new_experiments.py -q   # tests first
 
 **Track 2 (mechanism) — fast, exact, laptop-scale.** Each line writes the CSV the paper draws from:
 
-| Result (paper_v2) | Command | Output CSV |
+| Result (paper_v2) | Command — prefix `PYTHONPATH=. python3 mechanism/` | Output CSV |
 |---|---|---|
-| Handle + size scaling | `python3 mechanism_pilot.py 6` (and `7`, `8`) | `pilot_results_L{6,7,8}.csv` |
-| Current/continuity mechanism | `python3 current_mechanism.py 6` (and `7`,`8`) | `current_mech_L{6,7,8}.csv` |
-| Current under symmetry breaking | `python3 current_symbreak.py` | `current_symbreak_{tilt,disorder}.csv` |
-| Geometry separation (dephasing) | `python3 symbreak_diag.py tilt` / `disorder` | `symbreak_{tilt,disorder}.csv` |
-| Detuning (clean + sign) | `python3 detune_probe.py` | `detune_probe_L6.csv` |
-| Detuning (symmetry-broken) | `python3 symbreak_detune.py tilt` / `disorder 10` | `symbreak_detune_{tilt,disorder}.csv` |
-| Loss (validate → pilots) | `python3 stage0_loss.py`; `loss_pilot.py`; `loss_symbreak.py` | `loss_pilot_L6.csv`, `loss_symbreak_mini.csv` |
-| Bond control | `python3 bond_pilot.py` | `bond_pilot_L6.csv` |
-| Figures + tables + key numbers | `python3 make_paper_assets.py` | `outputs/paper_v2/…` |
+| Handle + size scaling | `mechanism_pilot.py 6` (and `7`, `8`) | `pilot_results_L{6,7,8}.csv` |
+| Current/continuity mechanism | `current_mechanism.py 6` (and `7`,`8`) | `current_mech_L{6,7,8}.csv` |
+| Current under symmetry breaking | `current_symbreak.py` | `current_symbreak_{tilt,disorder}.csv` |
+| Geometry separation (dephasing) | `symbreak_diag.py tilt` / `disorder` | `symbreak_{tilt,disorder}.csv` |
+| Detuning (clean + sign) | `detune_probe.py` | `detune_probe_L6.csv` |
+| Detuning (symmetry-broken) | `symbreak_detune.py tilt` / `disorder 10` | `symbreak_detune_{tilt,disorder}.csv` |
+| Loss (validate → pilots) | `stage0_loss.py`; `loss_pilot.py`; `loss_symbreak.py` | `loss_pilot_L6.csv`, `loss_symbreak_mini.csv` |
+| Bond control | `bond_pilot.py` | `bond_pilot_L6.csv` |
+| Figures + tables + key numbers | `make_paper_assets.py` | `outputs/paper_v2/…` |
 
 Then compile: `pdflatex paper_v2 && bibtex paper_v2 && pdflatex paper_v2 && pdflatex paper_v2`.
 The mechanism pilots run in seconds–minutes each; sparse/dense agreement is checked by

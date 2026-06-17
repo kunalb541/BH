@@ -180,7 +180,7 @@ the script's auto-verdict; the honest verdict follows from the actual Spearmans.
 - **C — larger L (trajectories / MPO):** later.
 - Paper rewrite still NOT started.
 
-## Artifacts (this branch)
+## Artifacts (scripts in `mechanism/`, run from repo root with `PYTHONPATH=.`; CSVs in `outputs/mechanism_pilot/`)
 - `mechanism_pilot.py` — clean-chain response-kernel pilot, L parametrized
   (sparse path forced for L≥7; exact, parity-checked).
 - `symbreak_diag.py` — tilt + disorder geometry-separation diagnostic.
